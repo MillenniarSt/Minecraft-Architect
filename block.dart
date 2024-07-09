@@ -9,10 +9,15 @@ class BlockState implements JsonReaddable<Map<String, dynamic>> {
     this.json(json);
   }
 
+  BlockState.resource(Map<String, dynamic> json) {
+    resource(json);
+  }
+
   void json(Map<String, dynamic> json) {
+    multipart = json["multipart"];
     models = {
-      for(String conditions in json["variants"]?.keys)
-        Conditions.json(condition): BlockModel.json(json["variants"]![conditions]!)
+      for(String conditions in json["models"]!.keys)
+        Conditions.json(condition): BlockModel.json(json["models"]![conditions]!)
     };
   }
 
@@ -26,10 +31,18 @@ class BlockState implements JsonReaddable<Map<String, dynamic>> {
     } else {
       models = {
         for(String conditions in json["variants"]!.keys)
-          Conditions.json(condition): BlockModel.json(json["variants"]![conditions]!)
+          Conditions.json(condition): BlockModel.resource(json["variants"]![conditions]!)
       };
     }
   }
+
+  Map<String, dynamic> toJson() => {
+    "multipart": multipart,
+    "models": {
+      for(Conditions conditions in models.keys)
+        conditions.toJson(): models[conditions]!.toJson()
+    }
+  };
 }
 
 class Conditions implements JsonMappable<String> {
@@ -53,4 +66,37 @@ class Conditions implements JsonMappable<String> {
     for(String condition in conditions)
       "$condition=${conditions[condition]!}"
   ].join(",");
+}
+
+class BlockModel implements JsonMappable<List> {
+
+  late List<BlockCube> cubes;
+
+  BlockModel(this.cubes);
+
+  BlockModel.json(List json) {
+    this.json(json);
+  }
+
+  BlockModel.resource(Map<String, dynamic> json) {
+    resource(json);
+  }
+
+  void json(List json) {
+    cubes = List.generate(json.lenght, (index) => BlockCube.json(json[index]));
+  }
+
+  List toJson() => List.generate(cubes.lenght, (index) => cubes[index].toJson());
+
+  void resource(Map<String, dynamic> json) {
+    
+  }
+}
+
+class BlockCube implements JsonMappable<Map<String, dynamic>> {
+
+  late Pos3D pivot;
+  late Rotation3D rotation;
+  late Dimension dimension;
+  late List<Texture?> textures;
 }

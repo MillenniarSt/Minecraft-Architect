@@ -1,8 +1,9 @@
 class BlockState implements JsonReaddable<Map<String, dynamic>> {
 
+  late bool multipart;
   late Map<Conditions, BlockModel> models;
 
-  BlockState(this.conditions);
+  BlockState(this.multipart, this.conditions);
 
   BlockState.json(Map<String, dynamic> json) {
     this.json(json);
@@ -12,6 +13,21 @@ class BlockState implements JsonReaddable<Map<String, dynamic>> {
     models = {
       for(String conditions in json["variants"]?.keys)
         Conditions.json(condition): BlockModel.json(json["variants"]![conditions]!)
+    };
+  }
+
+  void resource(Map<String, dynamic> json) {
+    multipart = json.contains("multipart");
+    if(multipart) {
+      models = {
+        for(Map<String, dynamic> part in json["multipart"])
+          Conditions.json(part["when"]): BlockModel.json(part["apply"])
+      };
+    } else {
+      models = {
+        for(String conditions in json["variants"]!.keys)
+          Conditions.json(condition): BlockModel.json(json["variants"]![conditions]!)
+      };
     }
   }
 }

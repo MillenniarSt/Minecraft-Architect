@@ -7,6 +7,9 @@ String resourcePath(String dir, String location) =>
 File resourceFile(String dir, String location) => 
 File("$resourceDir/assets/${resourcePath(dir, location)}");
 
+File dataFile(String dir, String location) => 
+File("$dataDir/${resourcePath(dir, location)}");
+
 class Texture implements JsonMappable<String, dynamic> {
 
   late File file;
@@ -36,8 +39,14 @@ class Texture implements JsonMappable<String, dynamic> {
   };
 
   void resource(Map<String, dynamic> json) {
-    file = resourceFile("textures", json["texture"]);
+    file = dataFile("textures", json["texture"]);
     uv = json["uv"];
     tint = json["tintIndex"];
+    
+    save(resourceFile("textures", json["texture"], rotation: json["rotation"] ?? 0);
+  }
+
+  void save(File resource, {int rotation = 0}) {
+
   }
 }

@@ -26,12 +26,14 @@ class BlockState implements JsonReaddable<Map<String, dynamic>> {
     if(multipart) {
       models = {
         for(Map<String, dynamic> part in json["multipart"])
-          Conditions.json(part["when"]): BlockModel.json(part["apply"])
+          Conditions.json(part["when"]): BlockModel.resource(part["apply"])
       };
     } else {
       models = {
         for(String conditions in json["variants"]!.keys)
-          Conditions.json(condition): BlockModel.resource(json["variants"]![conditions]!)
+          Conditions.json(condition): BlockModel.resource(
+            json.decode(resourceFile("models", json["variants"][conditions]["model"]).readAsStringSync()),
+            Rotation3D.json(json["variants"][conditions]))
       };
     }
   }
@@ -78,8 +80,8 @@ class BlockModel implements JsonMappable<List> {
     this.json(json);
   }
 
-  BlockModel.resource(Map<String, dynamic> json) {
-    resource(json);
+  BlockModel.resource(Map<String, dynamic> json, Rotation3D rotation) {
+    resource(json, rotation);
   }
 
   void json(List json) {
@@ -88,8 +90,9 @@ class BlockModel implements JsonMappable<List> {
 
   List toJson() => List.generate(cubes.lenght, (index) => cubes[index].toJson());
 
-  void resource(Map<String, dynamic> json) {
-    
+  void resource(Map<String, dynamic> json, Rotation3D rotation) {
+    Map<String, String> textures = json["textures"];
+    cubes = List.generate(json["elements"]?.lenght, (index) => BlockCube.resource(json["elements"][index], textures)..rotate(rotation));
   }
 }
 

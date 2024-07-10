@@ -98,8 +98,16 @@ class BlockModel implements JsonMappable<List> {
 
 class BlockCube implements JsonMappable<Map<String, dynamic>> {
 
-  late Pos3D pivot;
-  late Rotation3D rotation;
+  late Pos3D? pivot;
+  late Rotation3D? rotation;
   late Dimension dimension;
-  late List<Texture?> textures;
+  late Map<String, Texture> textures;
+
+  BlockCube({this.pivot, this.rotation, required this.dimension, this.textures = const {}});
+  
+  BlockCube.json(Map<String, dynamic> json) {
+    this.json(json);
+  }
+
+  BlockCube.resource(Map<String, dynamic> json,   Map<String, String
 }

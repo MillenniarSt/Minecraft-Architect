@@ -98,16 +98,50 @@ class BlockModel implements JsonMappable<List> {
 
 class BlockCube implements JsonMappable<Map<String, dynamic>> {
 
-  late Pos3D? pivot;
-  late Rotation3D? rotation;
+  Pos3D? pivot;
+  Rotation3D? rotation;
   late Dimension dimension;
-  late Map<String, Texture> textures;
+  late Map<String, Texture> faces;
 
-  BlockCube({this.pivot, this.rotation, required this.dimension, this.textures = const {}});
+  BlockCube({this.pivot, this.rotation, required this.dimension, this.faces = const {}});
   
   BlockCube.json(Map<String, dynamic> json) {
     this.json(json);
   }
 
-  BlockCube.resource(Map<String, dynamic> json,   Map<String, String
+  BlockCube.resource(Map<String, dynamic> json,   Map<String, String> textures) {
+    resource(json, textures);
+  }
+
+  void json(Map<String, dynamic> json) {
+    pivot = Pos3D.json(json["pivot"]?);
+    rotation = Rotation3D.json(json["rotation"]?);
+    dimension = Dimensione.json(json["dimension"]);
+    textures = {
+      for(String face in json["faces"])
+        face: Texture.json(json["faces"][face])
+    };
+  }
+
+  Map<String, dynamic> toJson() => {
+    if(pivot != null) "pivot": pivot.toJson(),
+    if(rotation != null) "rotation": rotation.toJson(),
+    "dimension": dimension.toJson(),
+    "faces": {
+      for(String face in faces)
+        face: faces[face]!.toJson()
+    }
+  };
+
+  void resource(Map<String, dynamic> json, Map<String, String> textures) {
+    if(json.contains("rotation") {
+      pivot = Pos3D.json(json["rotation"]["origin"]);
+      rotation = Rotation3D.axis(Axis.parse(json["rotation"]["axis"])!, json["rotation"]["angle"]);
+    }
+    dimension = Dimensione.poss(Pos3D.json(json["from"]), Pos3D.json(json["to"]));
+    faces = {
+      for(String face in json["faces"])
+        face: Texture.resource(json["faces"][face]
+    };
+  }
 }

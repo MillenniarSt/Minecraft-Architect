@@ -47,16 +47,6 @@ class BlockState implements JsonReaddable<Map<String, dynamic>> {
       };
     }
 
-    BlockModel? model(Map<String, dynamic> conditions) {
-      for(Conditions condition in models.keys) {
-        if(condition == conditions) {
-          return models[condition][];
-        }
-      }
-      return null;
-    }
-  }
-
   Map<String, dynamic> toJson() => {
     "multipart": multipart,
     "models": {
@@ -64,6 +54,25 @@ class BlockState implements JsonReaddable<Map<String, dynamic>> {
         conditions.toJson(): models[conditions]!.toJson()
     }
   };
+
+  List<BlockModel> model(Map<String, dynamic> conditions) {
+    if(multipart) {
+      List<BlockModel> rModels = [];
+      for(Conditions condition in models.keys) {
+        if(condition == conditions) {
+          rModels.add(models[condition][]);
+        }
+      }
+      return rModels;
+    } else {
+      for(Conditions condition in models.keys) {
+        if(condition == conditions) {
+          return [models[condition][]];
+        }
+      }
+      return [];
+    }
+  }
 }
 
 class Conditions implements JsonMappable<String> {

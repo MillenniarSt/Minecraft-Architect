@@ -1,7 +1,11 @@
 String resourceDir = "todo";
 String dataDir = "todo";
 
-File resourceFile(String dir, String location) => File("$resourceDir/assets/$dir/${location.contains(":") ? location.substring(0, location.indexOf(":")) : "minecraft"}/${location.contains(":") ? location.substring(location.indexOf(":") +1) : location}");
+String resourcePath(String dir, String location) => 
+"$dir/${location.contains(":") ? location.substring(0, location.indexOf(":")) : "minecraft"}/${location.contains(":") ? location.substring(location.indexOf(":") +1) : location}";
+
+File resourceFile(String dir, String location) => 
+File("$resourceDir/assets/${resourcePath(dir, location)}");
 
 class Texture implements JsonMappable<String, dynamic> {
 

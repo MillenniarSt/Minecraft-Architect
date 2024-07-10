@@ -6,6 +6,15 @@ abstract class JsonReadable<T> {
   void json(T json);
 }
 
+abstract class JsonWritable<T> {
+  T toJson();
+
+  @override
+  String toString() => toJson().toString();
+}
+
+abstract class JsonMappable<T> implements JsonReadable<T>, JsonWritable<T> { }
+
 class Identifier implements JsonReadable<String> {
 
   late final String type;

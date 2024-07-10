@@ -1,31 +1,30 @@
-import '../../world/world3D.dart';
+
+import 'dart:io';
+
+import 'package:beaver_builder_api/minecraft.dart';
+import 'package:beaver_builder_api/style/style.dart';
+import 'package:dart_minecraft/dart_nbt.dart';
+
 import 'elements.dart';
+import 'world.dart';
 
 class MinecraftArchitect {
 
   int dataVersion = 3578;
 
-  final Map<Pos3D, MinecraftBlock> blocks = {};
+  MinecraftEngineer engineer;
+  MinecraftStyle style;
+
+  final Map<Pos, MinecraftBlock> blocks = {};
   final List<MinecraftEntity> entities = [];
 
-  MinecraftArchitect(super.data, super.style);
-
-  MinecraftArchitect.map(super.data, super.style, super.map) :super.map();
-
-  @override
-  Future<void> build(Project project) async {
-    for(MainBuilder builder in project.builders) {
-      for(Component component in builder.components) {
-        component.build(this);
-      }
-    }
-  }
+  MinecraftArchitect(this.engineer, this.style);
 
   void saveNbt(File file) {
     Dimension dimension = Dimension.findDimension(this.blocks.keys);
     List<MinecraftBlock> palette = [];
-    Map<Pos3D, int> blocks = {};
-    for(Pos3D pos in this.blocks.keys) {
+    Map<Pos, int> blocks = {};
+    for(Pos pos in this.blocks.keys) {
       if(!palette.contains(this.blocks[pos])) {
         palette.add(this.blocks[pos]!);
       }
@@ -33,13 +32,13 @@ class MinecraftArchitect {
     }
     List<MinecraftEntity> entities = List.generate(this.entities.length, (index) => MinecraftEntity.nbt(this.entities[index].pos -= dimension.pos, this.entities[index].id, this.entities[index].properties));
 
-    List<MapEntry<Pos3D, int>> blockEntries = List.from(blocks.entries);
+    List<MapEntry<Pos, int>> blockEntries = List.from(blocks.entries);
     NbtCompound compoundTag = NbtCompound<NbtTag>(name: "", children: [
       NbtList<NbtInt>(name: "size", children:
-      [NbtInt(name: "0", value: dimension.size.width.ceil()), NbtInt(name: "1", value: dimension.size.height.ceil()), NbtInt(name: "2", value: dimension.size.length.ceil())]
+      [NbtInt(name: "0", value: dimension.size.x.ceil()), NbtInt(name: "1", value: dimension.size.y.ceil()), NbtInt(name: "2", value: dimension.size.z.ceil())]
       ),
       NbtList<NbtCompound>(name: "entities", children: List.generate(entities.length, (index) => NbtCompound(name: index.toString(), children: [
-        data.entityConfig.nbt(entities[index]),
+        engineer.entityConfig.nbt(entities[index]),
         NbtList<NbtInt>(name: "blockPos", children:
         [NbtInt(name: "0", value: entities[index].pos.x.floor()), NbtInt(name: "1", value: entities[index].pos.y.floor()), NbtInt(name: "2", value: entities[index].pos.z.floor())]
         ),
@@ -67,7 +66,7 @@ class MinecraftArchitect {
     NbtWriter(nbtCompression: NbtCompression.gzip).writeFile(file.path, compoundTag);
   }
 
-  void placeBlock(Pos3D pos, MinecraftBlock block, {bool replace = true}) {
+  void placeBlock(Pos pos, MinecraftBlock block, {bool replace = true}) {
     if(!replace) {
       if(!blocks.containsKey(pos)) {
         blocks[pos] = block;
@@ -77,8 +76,8 @@ class MinecraftArchitect {
     }
   }
 
-  void placeAllBlock(Map<Pos3D, MinecraftBlock> blocks, {bool replace = true}) {
-    for(Pos3D pos in blocks.keys) {
+  void placeAllBlock(Map<Pos, MinecraftBlock> blocks, {bool replace = true}) {
+    for(Pos pos in blocks.keys) {
       placeBlock(pos, blocks[pos]!, replace: replace);
     }
   }
@@ -90,7 +89,4 @@ class MinecraftArchitect {
   void addAllEntity(List<MinecraftEntity> entities) {
     this.entities.addAll(entities);
   }
-
-  @override
-  List<Savable> get childrenToMap => [];
 }

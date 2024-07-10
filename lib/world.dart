@@ -2,7 +2,9 @@ import 'dart:math';
 
 import 'util.dart';
 
-class Pos implements JsonReadable<List> {
+class Pos implements JsonMappable<List> {
+
+  static final Pos zero = Pos(0, 0, 0);
 
   late final double x;
   late final double y;
@@ -21,6 +23,9 @@ class Pos implements JsonReadable<List> {
     z = json[2].toDouble();
   }
 
+  @override
+  List toJson() => [x, y, z];
+
   static Pos findPos(Iterable<Pos> poss) {
     Pos found = Pos(double.maxFinite, double.maxFinite, double.maxFinite);
     for(Pos pos in poss) {
@@ -35,6 +40,29 @@ class Pos implements JsonReadable<List> {
 
   operator -(Pos pos) => Pos(x - pos.x, y - pos.y, z - pos.z);
 
+  Pos rotate(Pos center, Rotation rotation) {
+    double translatedX = x - center.x;
+    double translatedY = y - center.y;
+    double translatedZ = z - center.z;
+
+    double cosX = cos(rotation.x);
+    double sinX = sin(rotation.x);
+    double y1 = cosX * translatedY - sinX * translatedZ;
+    double z1 = sinX * translatedY + cosX * translatedZ;
+
+    double cosY = cos(rotation.y);
+    double sinY = sin(rotation.y);
+    double x2 = cosY * translatedX + sinY * z1;
+    double z2 = -sinY * translatedX + cosY * z1;
+
+    double cosZ = cos(rotation.z);
+    double sinZ = sin(rotation.z);
+    double x3 = cosZ * x2 - sinZ * y1;
+    double y3 = sinZ * x2 + cosZ * y1;
+
+    return Pos(x3 + center.x, y3 + center.y, z2 + center.z);
+  }
+
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -48,7 +76,7 @@ class Pos implements JsonReadable<List> {
   int get hashCode => x.hashCode ^ y.hashCode ^ z.hashCode;
 }
 
-class Size implements JsonReadable<List> {
+class Size implements JsonMappable<List> {
 
   late final double x;
   late final double y;
@@ -62,10 +90,13 @@ class Size implements JsonReadable<List> {
 
   @override
   void json(List json) {
-    x = json[0];
-    y = json[1];
-    z = json[1];
+    x = json[0].toDouble();
+    y = json[1].toDouble();
+    z = json[2].toDouble();
   }
+
+  @override
+  List toJson() => [x, y, z];
 
   static Size findSize(Pos pos, Iterable<Pos> poss) {
     Pos found = Pos(-0x8000000000000000, -0x8000000000000000, -0x8000000000000000);
@@ -94,7 +125,7 @@ class Size implements JsonReadable<List> {
   int get hashCode => x.hashCode ^ y.hashCode ^ z.hashCode;
 }
 
-class Dimension {
+class Dimension implements JsonMappable<Map<String, dynamic>> {
 
   late Pos pos;
   late Size size;
@@ -106,6 +137,22 @@ class Dimension {
     size = Size((end.x - start.x).abs() +1, (end.z - start.z).abs() +1, (end.y - start.y).abs() +1);
   }
 
+  Dimension.json(Map<String, dynamic> json) {
+    this.json(json);
+  }
+
+  @override
+  void json(Map<String, dynamic> json) {
+    pos = Pos(json["pos"]["x"], json["pos"]["z"], json["pos"]["y"]);
+    size = Size(json["size"]["width"], json["size"]["length"], json["size"]["height"]);
+  }
+
+  @override
+  Map<String, dynamic> toJson() => {
+    "pos": {"x": pos.x, "z": pos.z, "y": pos.y},
+    "size": {"width": size.x, "length": size.y, "height": size.z}
+  };
+
   static Dimension findDimension(Iterable<Pos> poss) {
     Pos pos = Pos.findPos(poss);
     return Dimension(pos, Size.findSize(pos, poss));
@@ -113,24 +160,50 @@ class Dimension {
 
   bool contains(Pos contain) =>
       ((contain.x > pos.x && contain.x < pos.x + size.x -1) || size.x == 0) &&
-          ((contain.z > pos.z && contain.z < pos.z + size.z -1) || size.z == 0) &&
-          ((contain.y > pos.y && contain.y < pos.y + size.y -1) || size.y == 0);
+      ((contain.y > pos.y && contain.y < pos.y + size.y -1) || size.y == 0) &&
+      ((contain.z > pos.z && contain.z < pos.z + size.z -1) || size.z == 0);
+
+  Dimension? inside(Dimension dim) {
+    if(dim.contains(pos)) {
+      return Dimension(pos, Size(
+          min(size.x, dim.pos.x + dim.size.x - pos.x),
+          min(size.y, dim.pos.y + dim.size.y - pos.y),
+          min(size.z, dim.pos.z + dim.size.z - pos.z),
+      ));
+    } else {
+      return null;
+    }
+  }
 
   @override
-  String toString() {
-    return 'Dimension{pos: $pos, size: $size}';
-  }
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Dimension &&
+          runtimeType == other.runtimeType &&
+          pos == other.pos &&
+          size == other.size;
+
+  @override
+  int get hashCode => pos.hashCode ^ size.hashCode;
 }
 
-class Rotation3D implements JsonReadable<Map<String, double>> {
+class Rotation implements JsonMappable<Map<String, double>> {
 
   late final double y;
   late final double x;
   late final double z;
 
-  Rotation3D(this.y, this.x, this.z);
+  Rotation(this.y, this.x, this.z);
 
-  Rotation3D.json(Map<String, double> json) {
+  Rotation.axis(String axis, double angle) {
+    switch(axis) {
+      case "x": x = angle; y = 0; z = 0;
+      case "y": x = 0; y = angle; z = 0;
+      case "z": x = 0; y = 0; z = angle;
+    }
+  }
+
+  Rotation.json(Map<String, double> json) {
     this.json(json);
   }
 
@@ -142,9 +215,16 @@ class Rotation3D implements JsonReadable<Map<String, double>> {
   }
 
   @override
+  Map<String, double> toJson() => {
+    if(x != 0) "x": x,
+    if(y != 0) "y": y,
+    if(z != 0) "z": z
+  };
+
+  @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-          other is Rotation3D &&
+          other is Rotation &&
               runtimeType == other.runtimeType &&
               y == other.y &&
               x == other.x &&
@@ -168,9 +248,9 @@ enum RegularRotation3D {
 
   const RegularRotation3D(this.angleY, this.angleX);
 
-  Rotation3D get rotation => Rotation3D(angleY, angleX, 0);
+  Rotation get rotation => Rotation(angleY, angleX, 0);
 
-  static RegularRotation3D? rotationOf(Rotation3D rotation) {
+  static RegularRotation3D? rotationOf(Rotation rotation) {
     if(rotation == north.rotation) {
       return north;
     } else if(rotation == east.rotation) {

@@ -1,11 +1,10 @@
-import '../../../data/database.dart';
-import '../../style.dart';
 import '../../util.dart';
+import '../component/component.dart';
 import '../elements.dart';
 import '../minecraft.dart';
 import 'model.dart';
 
-class MinecraftStyle extends Style {
+class MinecraftStyle extends ComponentStyle {
 
   final Map<String, MinecraftMaterial> materials = {};
   
@@ -33,28 +32,6 @@ class MinecraftStyle extends Style {
       materials[key] = MinecraftMaterial.json(json["materials"][key]);
     }
   }
-
-  @override
-  Map<String, dynamic> toJson() => {
-    "materials": {
-      for(String key in materials.keys)
-        key: materials[key]!.toJson()
-    },
-    "tags": {
-      "block": {
-        for(String key in blocks.keys)
-          key: blocks[key]!.toJson()
-      },
-      "entity": {
-        for(String key in entities.keys)
-          key: entities[key]!.toJson()
-      },
-      "item": {
-        for(String key in items.keys)
-          key: items[key]!.toJson()
-      }
-    }
-  };
 }
 
 class MinecraftTag implements JsonMappable<Map<String, dynamic>> {
@@ -138,6 +115,6 @@ class MinecraftMaterial implements JsonMappable<List> {
 
   MinecraftBlock build(int index, String? shape) {
     MapEntry<String, MinecraftBlockProperties> random = tags[index].elements.random;
-    return minecraftEngineer.data.materialConfig.build(random.key, shape)..properties += random.value.defined;
+    return minecraftEngineer.materialConfig.build(random.key, shape)..properties += random.value.defined;
   }
 }

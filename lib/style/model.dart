@@ -49,7 +49,7 @@ class MinecraftBuildModelPart {
       MinecraftModel model = this.model;
       architect.placeAllBlock(model.buildBlocks(architect.style, relPos + pos));
       for(MinecraftEntity entity in model.buildEntities(pos)) {
-        architect.data.entityConfig.applyDefault(entity);
+        architect.engineer.entityConfig.applyDefault(entity);
         architect.addEntity(entity..pos += relPos);
       }
     } else {
@@ -71,7 +71,7 @@ class MinecraftBuildModelPart {
             }
             for(MinecraftEntity entity in model.buildEntities(modelPos)) {
               if(dimension.contains(entity.pos)) {
-                architect.data.entityConfig.applyDefault(entity);
+                architect.engineer.entityConfig.applyDefault(entity);
                 architect.addEntity(entity..pos += relPos);
               }
             }
@@ -100,8 +100,8 @@ class MinecraftStructure implements JsonReadable<Map<String, dynamic>> {
   void json(Map<String, dynamic> json) {
     for(String key in json["models"].keys) {
       models[key] = RandomList(json[key] is List ?
-      List.generate(json["models"][key].lenght, (index) => minecraftEngineer.data.models[(json["models"][key][index] as String).replaceAll("/", "\\")]!)
-          : [minecraftEngineer.data.models[(json["models"][key] as String).replaceAll("/", "\\")]!]);
+      List.generate(json["models"][key].lenght, (index) => minecraftEngineer.models[(json["models"][key][index] as String).replaceAll("/", "\\")]!)
+          : [minecraftEngineer.models[(json["models"][key] as String).replaceAll("/", "\\")]!]);
     }
     for(int i = 0; i < json["parts"]!.length; i++) {
       parts.add(MinecraftModelPart.json(json["parts"][i]));
@@ -125,7 +125,7 @@ class MinecraftModelPart implements JsonReadable<Map<String, dynamic>> {
   void json(Map<String, dynamic> json) {
     anchor = Anchor.json(json["pos"] ?? {});
     model = json["model"];
-    rotation = RegularRotation3D.rotationOf(Rotation3D.json(json["rotation"] ?? {}))!;
+    rotation = RegularRotation3D.rotationOf(Rotation.json(json["rotation"] ?? {}))!;
   }
 }
 
@@ -146,9 +146,6 @@ class MinecraftModelPackage implements JsonReadable<List> {
       models.list.add(MinecraftModel.json(json[i]));
     }
   }
-
-  @override
-  List toJson() => List.generate(models.list.length, (index) => models.list[index].toJson());
 }
 
 class MinecraftModel implements JsonMappable<List> {
@@ -175,17 +172,17 @@ class MinecraftModel implements JsonMappable<List> {
 
   Dimension get dimension => Dimension.findDimension(List.generate(blocks.length, (index) => blocks[index].pos));
 
-  Map<Pos3D, MinecraftBlock> buildBlocks(MinecraftStyle style, Pos3D pos) => {
+  Map<Pos, MinecraftBlock> buildBlocks(MinecraftStyle style, Pos pos) => {
     for(MinecraftBlockData block in blocks)
       pos + block.pos: block.getFromStyle(style)
   };
 
-  List<MinecraftEntity> buildEntities(Pos3D pos) => List.generate(entities.length, (index) => entities[index].entity..pos += pos);
+  List<MinecraftEntity> buildEntities(Pos pos) => List.generate(entities.length, (index) => entities[index].entity..pos += pos);
 
   MinecraftModel rotate(RegularRotation3D rotation) {
     MinecraftModel model = MinecraftModel();
     for(MinecraftBlockData block in blocks) {
-      model.blocks.add(MinecraftBlockData(block.pos.rotate(Pos3D.zero, rotation.rotation), block.id, block.style, block.properties.rotate(rotation)));
+      model.blocks.add(MinecraftBlockData(block.pos.rotate(Pos.zero, rotation.rotation), block.id, block.style, block.properties.rotate(rotation)));
     }
     return model;
   }
@@ -196,7 +193,7 @@ class MinecraftModel implements JsonMappable<List> {
 
 class MinecraftBlockData implements JsonMappable<Map<String, dynamic>> {
 
-  late final Pos3D pos;
+  late final Pos pos;
   late final String? id;
   late final MinecraftBlockDataStyle? style;
   late final MinecraftBlockProperties properties;
@@ -209,7 +206,7 @@ class MinecraftBlockData implements JsonMappable<Map<String, dynamic>> {
 
   @override
   void json(Map<String, dynamic> json) {
-    pos = json["pos"] != null ? Pos3D.json(json["pos"]) : Pos3D.zero;
+    pos = json["pos"] != null ? Pos.json(json["pos"]) : Pos.zero;
     id = json["id"];
     style = json["style"] != null ? MinecraftBlockDataStyle.json(json["style"]) : null;
     properties = MinecraftBlockProperties.json(json["properties"] ?? {});
@@ -217,7 +214,7 @@ class MinecraftBlockData implements JsonMappable<Map<String, dynamic>> {
 
   @override
   Map<String, dynamic> toJson() => {
-    if(pos != Pos3D.zero) "pos": pos.toJson(),
+    if(pos != Pos.zero) "pos": pos.toJson(),
     if(id != null) "id": id,
     if(style != null) "style": style!.toJson(),
     if(properties.entries.isNotEmpty) "properties": properties.toJson()
@@ -304,7 +301,7 @@ class MinecraftBlockProperties implements JsonMappable<Map<String, dynamic>> {
 
 class MinecraftEntityData implements JsonMappable<Map<String, dynamic>> {
 
-  late final Pos3D pos;
+  late final Pos pos;
   late final String id;
   late final MinecraftEntityProperties properties;
 
@@ -316,14 +313,14 @@ class MinecraftEntityData implements JsonMappable<Map<String, dynamic>> {
 
   @override
   void json(Map<String, dynamic> json) {
-    pos = json["pos"] != null ? Pos3D.json(json["pos"]) : Pos3D.zero;
+    pos = json["pos"] != null ? Pos.json(json["pos"]) : Pos.zero;
     id = json["id"];
     properties = MinecraftEntityProperties.json(json["properties"] ?? {});
   }
 
   @override
   Map<String, dynamic> toJson() => {
-    if(pos != Pos3D.zero) "pos": pos.toJson(),
+    if(pos != Pos.zero) "pos": pos.toJson(),
     "id": id,
     if(properties.entries.isNotEmpty) "properties": properties.toJson()
   };

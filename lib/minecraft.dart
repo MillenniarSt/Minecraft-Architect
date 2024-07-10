@@ -2,11 +2,14 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'component/floor.dart';
+import 'component/gadget.dart';
 import 'component/roof.dart';
+import 'component/wall.dart';
 import 'config.dart';
-import 'style/components_style.dart';
 import 'style/model.dart';
 import 'style/style.dart';
+
+String engineerDir = Platform.environment[Platform.isWindows ? "APPDATA" : "HOME"]! + "\\Beaver Architect\\plugins\\data\\minecraft";
 
 MinecraftEngineer minecraftEngineer = MinecraftEngineer("minecraft", "Minecraft");
 

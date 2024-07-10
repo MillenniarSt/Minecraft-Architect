@@ -29,17 +29,21 @@ class BlockState implements JsonReaddable<Map<String, dynamic>> {
           Conditions.json(part["when"]): part["apply"] is List ?
             List.generate(part["apply"].lenght, (index) => BlockModel.resource(
               json.decode(resourceFile("models", part["apply"][index]["model"]).readAsStringSync()),
-              Rotation3D.json(part["apply"][index]))) :
+              rotation: Rotation3D.json(part["apply"][index]))) :
             [BlockModel.resource(
               json.decode(resourceFile("models", part["apply"]["model"]).readAsStringSync()),
-              Rotation3D.json(part["apply"]))]
+              rotation: Rotation3D.json(part["apply"]))]
       };
     } else {
       models = {
         for(String conditions in json["variants"]!.keys)
-          Conditions.json(condition): BlockModel.resource(
-            json.decode(resourceFile("models", json["variants"][conditions]["model"]).readAsStringSync()),
-            Rotation3D.json(json["variants"][conditions]))
+          Conditions.json(condition): json["variants"][condition] is List ?
+            List.generate(json["variants"][condition].lenght, (index) => BlockModel.resource(
+              json.decode(resourceFile("models", json["variants"][conditions][index]["model"]).readAsStringSync()),
+              rotation: Rotation3D.json(json["variants"][conditions][index]))) :
+            [BlockModel.resource(
+              json.decode(resourceFile("models", json["variants"][conditions]["model"]).readAsStringSync()),
+              rotation: Rotation3D.json(json["variants"][conditions]))]
       };
     }
 
@@ -105,8 +109,8 @@ class BlockModel implements JsonMappable<Map<String, dynamic>> {
     this.json(json);
   }
 
-  BlockModel.resource(Map<String, dynamic> json, this.rotation) {
-    resource(json);
+  BlockModel.resource(Map<String, dynamic> json, {this.rotation, Map<String, String> pTextures = {}}) {
+    resource(json, pTextures);
   }
 
   void json(Map<String, dynamic> json) {
@@ -119,8 +123,15 @@ class BlockModel implements JsonMappable<Map<String, dynamic>> {
     "cubes": List.generate(cubes.lenght, (index) => cubes[index].toJson())
 };
 
-  void resource(Map<String, dynamic> json) {
-    Map<String, String> textures = json["textures"];
+  void resource(Map<String, dynamic> json, Map<String, String> pTextures) {
+    Map<String, String> textures = {
+      for(String key in json["textures"].keys)
+        key: textures[key][0] == "#" ? pTextures[key.substring(1)]! : textures[key]
+    };
     cubes = List.generate(json["elements"]?.lenght, (index) => Cube.resource(json["elements"][index], textures));
+
+    if(json.contains("parent")) {
+      cubes.addAll(BlockModel.resource(json.decode(resourceFile("models", json["parent"]).readAsStringSync()), pTextures: textures).cubes);
+    }
   }
 }

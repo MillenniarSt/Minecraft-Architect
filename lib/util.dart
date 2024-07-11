@@ -1,6 +1,9 @@
+import 'dart:convert';
 import 'dart:math';
 
 import 'world.dart';
+
+final JsonEncoder encoder = JsonEncoder.withIndent("  ");
 
 abstract class JsonReadable<T> {
   void json(T json);

@@ -1,111 +1,145 @@
-import 'dart:convert';
-import 'dart:math';
+import 'dart:io';
 
 import '../util.dart';
 import '../world.dart';
 import 'render.dart';
 
-class Block implements JsonMappable<Map<String, dynamic>> {
+class Block extends Render {
 
   late bool multipart;
-  late Map<Conditions, List<BlockModel>> models;
+  late List<BlockState> blockstates;
 
-  final _random = Random();
+  Block(super.mod, super.id, super.name, this.multipart, this.blockstates);
 
-  Block(this.multipart, this.models);
+  Block.json(super.mod, super.id, super.json) : super.json();
 
-  Block.json(Map<String, dynamic> json) {
-    this.json(json);
-  }
-
-  Block.resource(Map<String, dynamic> json) {
+  Block.resource(super.mod, super.id, super.name, Map<String, dynamic> json) {
     resource(json);
   }
 
+  @override
   void json(Map<String, dynamic> json) {
+    super.json(json);
     multipart = json["multipart"];
-    models = {
-      for(String condition in json["models"]!.keys)
-        Conditions.json(condition): List.generate(json["models"][condition].length, (index) => BlockModel.json(json["models"][condition][index]))
-    };
+    blockstates = List.generate(json["blockstates"].length, (index) => BlockState.json(json["blockstates"][index]));
   }
-
+  
+  @override
+  Map<String, dynamic> toJson() => super.toJson()..addAll({
+    "multipart": multipart,
+    "blockstates": List.generate(blockstates.length, (index) => blockstates[index].toJson())
+  });
+  
   void resource(Map<String, dynamic> json) {
     multipart = json["multipart"] != null;
-    if (multipart) {
-      models = {
-        for(Map<String, dynamic> part in json["multipart"])
-          Conditions.json(part["when"]): part["apply"] is List ?
-          List.generate(part["apply"].length, (index) =>
-              BlockModel.resource(jsonDecode(loader.resourceText("models", part["apply"][index]["model"])), rotation: Rotation.json(part["apply"][index]))
-          ) :
-          [BlockModel.resource(jsonDecode(loader.resourceText("models", part["apply"]["model"])), rotation: Rotation.json(part["apply"]))]
-      };
+    if(multipart) {
+      blockstates = List.generate(json["multipart"].length, (index) => BlockState.resource(json["multipart"][index]["apply"], json["multipart"][index]["when"]));
     } else {
-      models = {
-        for(String condition in json["variants"]!.keys)
-          Conditions.json(condition): json["variants"][condition] is List ?
-          List.generate(json["variants"][condition].length, (index) =>
-              BlockModel.resource(jsonDecode(loader.resourceText("models", json["variants"][condition][index]["model"])), rotation: Rotation.json(json["variants"][condition][index]))
-          ) :
-          [BlockModel.resource(jsonDecode(loader.resourceText("models", json["variants"][condition]["model"])), rotation: Rotation.json(json["variants"][condition]))]
-      };
+      blockstates = [
+        for(String condition in json["variants"].keys)
+          BlockState.resource(json["variants"][condition], condition)
+      ];
     }
   }
-
-  Map<String, dynamic> toJson() => {
-    "multipart": multipart,
-    "models": {
-      for(Conditions conditions in models.keys)
-        conditions.toJson(): List.generate(models[conditions]!.length, (index) => models[conditions]![index].toJson())
-    }
-  };
 
   List<BlockModel> model(Map<String, dynamic> conditions) {
     if(multipart) {
       List<BlockModel> rModels = [];
-      for(Conditions condition in models.keys) {
-        if(condition == conditions) {
-          rModels.add(models[condition]![_random.nextInt(models[condition]!.length)]);
+      for(BlockState blockstate in blockstates) {
+        if(blockstate.condition == conditions) {
+          rModels.add(blockstate.models.random);
         }
       }
       return rModels;
     } else {
-      for(Conditions condition in models.keys) {
-        if(condition == conditions) {
-          return [models[condition]![_random.nextInt(models[condition]!.length)]];
+      for(BlockState blockstate in blockstates) {
+        if(blockstate.condition == conditions) {
+          return [blockstate.models.random];
         }
       }
       return [];
     }
   }
+
+  Future<void> save() async {
+    File file = loader.dataFile("block", location, "json");
+    await file.create(recursive: true);
+    await file.writeAsString(encoder.convert(toJson()).replaceAllMapped(
+        RegExp(r'\[\s*([\d.,\s]+)\s*\]'), (match) => '[${match.group(1)!.replaceAll(RegExp(r'\s+'), ' ').trim()}]'
+    ));
+  }
 }
 
-class Conditions implements JsonMappable<String> {
+class BlockState implements JsonMappable<Map<String, dynamic>> {
 
-  late final Map<String, String> conditions;
+  late Condition condition;
+  late RandomList<BlockModel> models;
 
-  Conditions(this.conditions);
+  BlockState(this.models);
 
-  Conditions.json(String json) {
+  BlockState.json(Map<String, dynamic> json) {
     this.json(json);
   }
 
-  void json(String json) {
-    conditions = {
-      for(String condition in json.split(","))
-        condition.substring(0, condition.indexOf("=")): condition.substring(condition.indexOf("=") +1)
-    };
+  BlockState.resource(models, condition) {
+    resource(models, condition);
   }
 
-  String toJson() => [
-    for(String condition in conditions.keys)
-      "$condition=${conditions[condition]}"
-  ].join(",");
+  void json(Map<String, dynamic> json) {
+    condition = Condition.json(json["condition"]);
+    models = RandomList(List.generate(json["models"].length, (index) => BlockModel.json(json["models"][index])));
+  }
 
+  Map<String, dynamic> toJson() => {
+    "condition": condition.toJson(),
+    "models": List.generate(models.list.length, (index) => models.list[index].toJson())
+  };
+
+  void resource(models, condition) {
+    this.condition = Condition.resource(condition);
+    this.models = models is List ?
+      RandomList(List.generate(models.length, (index) => BlockModel.resource(loader.resourceJson("models", models[index]["model"]), rotation: Rotation.json(models[index])))) :
+      RandomList([BlockModel.resource(loader.resourceJson("models", models["model"]), rotation: Rotation.json(models))]);
+  }
+}
+
+class Condition implements JsonMappable<Map<String, dynamic>> {
+
+  late Map<String, dynamic> conditions;
+
+  Condition(this.conditions);
+
+  Condition.json(Map<String, dynamic> json) {
+    this.json(json);
+  }
+
+  Condition.resource(json) {
+    resource(json);
+  }
+
+  void json(Map<String, dynamic> json) {
+    conditions = json;
+  }
+
+  Map<String, dynamic> toJson() => conditions;
+
+  void resource(json) {
+    if(json is String && json.isNotEmpty) {
+      conditions = {
+        for(String condition in json.split(","))
+          condition.substring(0, condition.indexOf("=")): condition.substring(condition.indexOf("=") +1)
+      };
+    } else if(json is Map<String, dynamic>) {
+      conditions = json;
+    } else {
+      conditions = {};
+    }
+  }
+
+  //TODO
   @override
   bool operator ==(Object other) {
-    Map<String, dynamic> otherConditions = other is Conditions ? other.conditions : other as Map<String, dynamic>;
+    Map<String, dynamic> otherConditions = other is Condition ? other.conditions : other as Map<String, dynamic>;
     for(String condition in conditions.keys) {
       if(otherConditions.containsKey(condition) && otherConditions[condition].toString() != conditions[condition]) {
         return false;
@@ -117,8 +151,8 @@ class Conditions implements JsonMappable<String> {
 
 class BlockModel implements JsonMappable<Map<String, dynamic>> {
 
-  Rotation? rotation;
-  late List<Cube> cubes;
+  Rotation rotation = Rotation.zero;
+  List<Cube> cubes = [];
 
   BlockModel(this.cubes);
 
@@ -126,7 +160,8 @@ class BlockModel implements JsonMappable<Map<String, dynamic>> {
     this.json(json);
   }
 
-  BlockModel.resource(Map<String, dynamic> json, {this.rotation, Map<String, String> pTextures = const {}}) {
+  BlockModel.resource(Map<String, dynamic> json, {Rotation? rotation, Map<String, String> pTextures = const {}}) {
+    this.rotation = rotation ?? Rotation.zero;
     resource(json, pTextures);
   }
 
@@ -138,19 +173,23 @@ class BlockModel implements JsonMappable<Map<String, dynamic>> {
   }
 
   Map<String, dynamic> toJson() => {
-    if(rotation != null) "rotation": rotation!.toJson(),
+    if(rotation != Rotation.zero) "rotation": rotation.toJson(),
     "cubes": List.generate(cubes.length, (index) => cubes[index].toJson())
 };
 
   void resource(Map<String, dynamic> json, Map<String, String> pTextures) {
     Map<String, String> textures = {
-      for(String key in json["textures"].keys)
-        key: json["textures"][key][0] == "#" ? pTextures[key.substring(1)]! : json["textures"][key]
+      if(json["textures"] != null)
+        for(String key in json["textures"].keys)
+          key: json["textures"][key][0] == "#" ? pTextures[json["textures"][key].substring(1)] ?? json["textures"][json["textures"][key].substring(1)]! : json["textures"][key],
+      for(String key in pTextures.keys)
+        key: pTextures[key]!
     };
-    cubes = List.generate(json["elements"]?.length, (index) => Cube.resource(json["elements"][index], textures));
-
+    if(json["elements"] != null) {
+      cubes = List.generate(json["elements"].length, (index) => Cube.resource(json["elements"][index], textures));
+    }
     if(json["parent"] != null) {
-      cubes.addAll(BlockModel.resource(jsonDecode(loader.resourceText("models", json["parent"])), pTextures: textures).cubes);
+      cubes.addAll(BlockModel.resource(loader.resourceJson("models", json["parent"]), pTextures: textures).cubes);
     }
   }
 }

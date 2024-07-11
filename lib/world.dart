@@ -143,14 +143,14 @@ class Dimension implements JsonMappable<Map<String, dynamic>> {
 
   @override
   void json(Map<String, dynamic> json) {
-    pos = Pos(json["pos"]["x"], json["pos"]["z"], json["pos"]["y"]);
-    size = Size(json["size"]["width"], json["size"]["length"], json["size"]["height"]);
+    pos = Pos.json(json["pos"]);
+    size = Size.json(json["size"]);
   }
 
   @override
   Map<String, dynamic> toJson() => {
-    "pos": {"x": pos.x, "z": pos.z, "y": pos.y},
-    "size": {"width": size.x, "length": size.y, "height": size.z}
+    "pos": pos.toJson(),
+    "size": size.toJson()
   };
 
   static Dimension findDimension(Iterable<Pos> poss) {
@@ -187,7 +187,9 @@ class Dimension implements JsonMappable<Map<String, dynamic>> {
   int get hashCode => pos.hashCode ^ size.hashCode;
 }
 
-class Rotation implements JsonMappable<Map<String, double>> {
+class Rotation implements JsonMappable {
+
+  static final Rotation zero = Rotation(0, 0, 0);
 
   late final double y;
   late final double x;
@@ -203,23 +205,35 @@ class Rotation implements JsonMappable<Map<String, double>> {
     }
   }
 
-  Rotation.json(Map<String, double> json) {
+  Rotation.json(json) {
     this.json(json);
   }
 
   @override
-  void json(Map<String, double> json) {
-    y = json["y"] ?? 0;
-    x = json["x"] ?? 0;
-    z = json["z"] ?? 0;
+  void json(json) {
+    if(json is List) {
+      x = json[0]?.toDouble() ?? 0;
+      y = json[1]?.toDouble() ?? 0;
+      z = json[2]?.toDouble() ?? 0;
+    } else {
+      y = json["y"]?.toDouble() ?? 0;
+      x = json["x"]?.toDouble() ?? 0;
+      z = json["z"]?.toDouble() ?? 0;
+    }
   }
 
   @override
-  Map<String, double> toJson() => {
-    if(x != 0) "x": x,
-    if(y != 0) "y": y,
-    if(z != 0) "z": z
-  };
+  dynamic toJson({bool asList = true}) {
+    if(asList) {
+      return [x, y, z];
+    } else {
+      return {
+        if(x != 0) "x": x,
+        if(y != 0) "y": y,
+        if(z != 0) "z": z
+      };
+    }
+  }
 
   @override
   bool operator ==(Object other) =>

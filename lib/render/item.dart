@@ -8,11 +8,11 @@ class Item extends Render {
 
   late ItemModel model;
 
-  Item(super.mod, super.id, super.name, this.model);
+  Item(super.location, super.name, this.model);
 
-  Item.json(super.mod, super.id, super.json) : super.json();
+  Item.json(super.location, super.json) : super.json();
 
-  Item.resource(super.mod, super.id, super.name, Map<String, dynamic> json) {
+  Item.resource(super.location, super.name, Map<String, dynamic> json) {
     resource(json);
   }
 
@@ -74,30 +74,35 @@ class ItemModel implements JsonMappable<Map<String, dynamic>> {
     if(json["elements"] != null) {
       cubes = List.generate(json["elements"].length, (index) => Cube.resource(json["elements"][index], textures));
     }
-    if(json["parent"] != "minecraft:item/generated" || json["parent"] != "item/generated") {
-      cubes.addAll([
-        for(String layer in textures.keys)
-          if(layer.indexOf("layer") == 0)
-            Cube(
-                dimension: Dimension(Pos.zero, Size(16, 16, 0)),
-                faces: {"north": Texture(loader.dataFile("textures", textures[layer]!, "png"))..save(loader.resource("textures", textures[layer]!, "png")!)}
-            )
-      ]);
-      display + itemGenerated;
-    } else if(json["parent"] != "minecraft:item/handheld" || json["parent"] != "item/handheld") {
-      cubes.addAll([
-        for(String layer in textures.keys)
-          if(layer.indexOf("layer") == 0)
-            Cube(
-                dimension: Dimension(Pos.zero, Size(16, 16, 0)),
-                faces: {"north": Texture(loader.dataFile("textures", textures[layer]!, "png"))..save(loader.resource("textures", textures[layer]!, "png")!)}
-            )
-      ]);
-      display + itemHandheld;
-    } else if(json["parent"] != null) {
-      ItemModel parent = ItemModel.resource(loader.resourceJson("models", json["parent"]), pTextures: textures);
-      cubes.addAll(parent.cubes);
-      display + parent.display;
+    if(json["parent"] != null) {
+      Location parentLoc = Location.json(json["parent"]);
+      if(parentLoc == Location.minecraft("builtin/entity")) {
+        print("Item model skipped, it is from \"builtin/entity\"");
+      } else if(parentLoc == Location.minecraft("item/generated")) {
+        cubes.addAll([
+          for(String layer in textures.keys)
+            if(layer.indexOf("layer") == 0)
+              Cube(
+                  dimension: Dimension(Pos.zero, Size(16, 16, 0)),
+                  faces: {"north": Texture(loader.dataFile("textures", Location.json(textures[layer]!), "png"))..save(loader.resource("textures", Location.json(textures[layer]!), "png")!)}
+              )
+        ]);
+        display + itemGenerated;
+      } else if(parentLoc == Location.minecraft("item/handheld")) {
+        cubes.addAll([
+          for(String layer in textures.keys)
+            if(layer.indexOf("layer") == 0)
+              Cube(
+                  dimension: Dimension(Pos.zero, Size(16, 16, 0)),
+                  faces: {"north": Texture(loader.dataFile("textures", Location.json(textures[layer]!), "png"))..save(loader.resource("textures", Location.json(textures[layer]!), "png")!)}
+              )
+        ]);
+        display + itemHandheld;
+      } else {
+        ItemModel parent = ItemModel.resource(loader.resourceJson("models", Location.json(json["parent"])), pTextures: textures);
+        cubes.addAll(parent.cubes);
+        display + parent.display;
+      }
     }
   }
 }

@@ -21,8 +21,8 @@ class MinecraftLoader {
   String version;
   Archive? _archive;
 
-  late Map<String, Block> blocks;
-  late Map<String, Item> items;
+  late Map<Location, Block> blocks;
+  late Map<Location, Item> items;
 
   MinecraftLoader(this.version);
 
@@ -46,38 +46,39 @@ class MinecraftLoader {
       if(dirs.length == 4 && dirs[0] == "assets" && dirs[2] == "lang" && dirs[3] == "en_us.json") {
         Map<String, dynamic> lang = jsonDecode(String.fromCharCodes(file.content));
         for(String key in lang.keys) {
-          try {
-            List<String> args = key.split(".");
-            if(args.length == 3 && args[0] == "block") {
-              Block block = Block.resource(args[1], args[2], lang[key], resourceJson("blockstates", "${args[1]}:${args[2]}"));
+          List<String> args = key.split(".");
+          if(args.length == 3 && args[0] == "block") {
+            List<int>? bytes = resource("blockstates", Location(args[1], args[2]), "json");
+            if(bytes != null) {
+              Block block = Block.resource(Location(args[1], args[2]), lang[key], jsonDecode(String.fromCharCodes(bytes)));
               await block.save();
               blocks[block.location] = block;
-              print("Block: " + block.location);
-            } else if(args.length == 3 && args[0] == "item") {
-              Item item = Item.resource(args[1], args[2], lang[key], resourceJson("models/item", "${args[1]}:${args[2]}"));
+              if(block.item != null) {
+                items[block.item!.location] = block.item!;
+              }
+            }
+          } else if(args.length == 3 && args[0] == "item") {
+            List<int>? bytes = resource("models/item", Location(args[1], args[2]), "json");
+            if(bytes != null) {
+              Item item = Item.resource(Location(args[1], args[2]), lang[key], jsonDecode(String.fromCharCodes(bytes)));
               await item.save();
               items[item.location] = item;
-              print("Item: " + item.location);
             }
-          } catch(e, s) {
-            print(e);
-            print(s);
           }
         }
       }
     }
   }
 
-  String resourcePath(String dir, String location, String extension) =>
-      "${location.contains(":") ? location.substring(0, location.indexOf(":")) : "minecraft"}/$dir/${location.contains(":") ? location.substring(location.indexOf(":") +1) : location}.$extension".replaceAll("\\", "/");
+  String resourcePath(String dir, Location location, String extension) => "${location.mod}/$dir/${location.id}.$extension".replaceAll("\\", "/");
 
-  File dataFile(String dir, String location, String extension) => File("$dataDir\\${resourcePath(dir, location, extension)}");
+  File dataFile(String dir, Location location, String extension) => File("$dataDir\\${resourcePath(dir, location, extension)}");
 
-  List<int>? resource(String dir, String location, String extension) {
+  List<int>? resource(String dir, Location location, String extension) {
     return _archive!.findFile("assets/${resourcePath(dir, location, extension)}")?.content;
   }
 
-  dynamic resourceJson(String dir, String location) => jsonDecode(String.fromCharCodes(resource(dir, location, "json")!));
+  dynamic resourceJson(String dir, Location location) => jsonDecode(String.fromCharCodes(resource(dir, location, "json")!));
 
   File get resourceJar => File("$minecraftDir\\versions\\$version\\$version.jar");
 
@@ -86,14 +87,13 @@ class MinecraftLoader {
 
 abstract class Render implements JsonMappable<Map<String, dynamic>> {
 
-  final String mod;
-  final String id;
+  final Location location;
   
   late final String name;
 
-  Render(this.mod, this.id, this.name);
+  Render(this.location, this.name);
 
-  Render.json(this.mod, this.id, Map<String, dynamic> json) {
+  Render.json(this.location, Map<String, dynamic> json) {
     this.json(json);
   }
 
@@ -107,7 +107,49 @@ abstract class Render implements JsonMappable<Map<String, dynamic>> {
     "name": name
   };
 
-  String get location => "$mod:$id";
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Render &&
+          runtimeType == other.runtimeType &&
+          location == other.location;
+
+  @override
+  int get hashCode => location.hashCode;
+}
+
+class Location implements JsonMappable<String> {
+
+  late final String mod;
+  late final String id;
+
+  Location(this.mod, this.id);
+
+  Location.minecraft(this.id) : mod = "minecraft";
+
+  Location.json(String json) {
+    this.json(json);
+  }
+
+  @override
+  void json(String json) {
+    mod = json.contains(":") ? json.substring(0, json.indexOf(":")) : "minecraft";
+    id = json.contains(":") ? json.substring(json.indexOf(":") +1) : json;
+  }
+
+  @override
+  String toJson() => "$mod:$id";
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Location &&
+          runtimeType == other.runtimeType &&
+          mod == other.mod &&
+          id == other.id;
+
+  @override
+  int get hashCode => mod.hashCode ^ id.hashCode;
 }
 
 class Cube implements JsonMappable<Map<String, dynamic>> {
@@ -191,11 +233,13 @@ class Texture implements JsonMappable<Map<String, dynamic>> {
   };
 
   void resource(Map<String, dynamic> json, Map<String, String> textures) {
-    file = loader.dataFile("textures", textures[json["texture"].substring(1)] ?? textures["particle"]!, "png");
+    file = loader.dataFile("textures", Location.json(textures[json["texture"].substring(1)] ?? textures["particle"]!), "png");
     uv = List.castFrom(json["uv"] ?? [0, 0, 16, 16]);
     tint = json["tintIndex"];
-    
-    //save(loader.resource("textures", textures[json["texture"].substring(1)] ?? textures["particle"]!, "png")!, rotation: json["rotation"] ?? 0);
+
+    if(!file.existsSync()) {
+      save(loader.resource("textures", Location.json(textures[json["texture"].substring(1)] ?? textures["particle"]!), "png")!, rotation: json["rotation"] ?? 0);
+    }
   }
 
   void save(List<int> resource, {int rotation = 0}) {

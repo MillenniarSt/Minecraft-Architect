@@ -1,19 +1,23 @@
+import 'dart:convert';
 import 'dart:io';
 
 import '../util.dart';
 import '../world.dart';
+import 'item.dart';
 import 'render.dart';
 
 class Block extends Render {
 
+  Item? item;
+
   late bool multipart;
   late List<BlockState> blockstates;
 
-  Block(super.mod, super.id, super.name, this.multipart, this.blockstates);
+  Block(super.location, super.name, this.item, this.multipart, this.blockstates);
 
-  Block.json(super.mod, super.id, super.json) : super.json();
+  Block.json(super.location, super.json) : super.json();
 
-  Block.resource(super.mod, super.id, super.name, Map<String, dynamic> json) {
+  Block.resource(super.location, super.name, Map<String, dynamic> json) {
     resource(json);
   }
 
@@ -22,10 +26,14 @@ class Block extends Render {
     super.json(json);
     multipart = json["multipart"];
     blockstates = List.generate(json["blockstates"].length, (index) => BlockState.json(json["blockstates"][index]));
+    if(json["item"] != null) {
+      item = Item.json(Location.json(json["item"]), loader.resourceJson("models/item", Location.json(json["item"])));
+    }
   }
   
   @override
   Map<String, dynamic> toJson() => super.toJson()..addAll({
+    if(item != null) "item": item!.location,
     "multipart": multipart,
     "blockstates": List.generate(blockstates.length, (index) => blockstates[index].toJson())
   });
@@ -39,6 +47,10 @@ class Block extends Render {
         for(String condition in json["variants"].keys)
           BlockState.resource(json["variants"][condition], condition)
       ];
+    }
+    List<int>? bytes = loader.resource("models/item", location, "json");
+    if(bytes != null) {
+      item = Item.resource(location, name, jsonDecode(String.fromCharCodes(bytes)));
     }
   }
 
@@ -67,6 +79,9 @@ class Block extends Render {
     await file.writeAsString(encoder.convert(toJson()).replaceAllMapped(
         RegExp(r'\[\s*([\d.,\s]+)\s*\]'), (match) => '[${match.group(1)!.replaceAll(RegExp(r'\s+'), ' ').trim()}]'
     ));
+    if(item != null) {
+      await item!.save();
+    }
   }
 }
 
@@ -98,8 +113,8 @@ class BlockState implements JsonMappable<Map<String, dynamic>> {
   void resource(models, condition) {
     this.condition = Condition.resource(condition);
     this.models = models is List ?
-      RandomList(List.generate(models.length, (index) => BlockModel.resource(loader.resourceJson("models", models[index]["model"]), rotation: Rotation.json(models[index])))) :
-      RandomList([BlockModel.resource(loader.resourceJson("models", models["model"]), rotation: Rotation.json(models))]);
+      RandomList(List.generate(models.length, (index) => BlockModel.resource(loader.resourceJson("models", Location.json(models[index]["model"])), rotation: Rotation.json(models[index])))) :
+      RandomList([BlockModel.resource(loader.resourceJson("models", Location.json(models["model"])), rotation: Rotation.json(models))]);
   }
 }
 
@@ -189,7 +204,7 @@ class BlockModel implements JsonMappable<Map<String, dynamic>> {
       cubes = List.generate(json["elements"].length, (index) => Cube.resource(json["elements"][index], textures));
     }
     if(json["parent"] != null) {
-      cubes.addAll(BlockModel.resource(loader.resourceJson("models", json["parent"]), pTextures: textures).cubes);
+      cubes.addAll(BlockModel.resource(loader.resourceJson("models", Location.json(json["parent"])), pTextures: textures).cubes);
     }
   }
 }

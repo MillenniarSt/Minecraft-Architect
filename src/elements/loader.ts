@@ -1,5 +1,4 @@
-import fs from 'fs'
-import chalk from "chalk"
+import fs from 'fs-extra'
 import { Item } from "./item.js"
 import AdmZip from "adm-zip"
 import { Location } from "../elements/element.js"

@@ -11,11 +11,14 @@ export class Block extends Element {
   multipart: boolean
   blockstates: BlockState[]
 
-  constructor(location: Location, name: string, item: Item | undefined, multipart: boolean, blockstates: BlockState[]) {
+  properties: Record<string, string[]>
+
+  constructor(location: Location, name: string, item: Item | undefined, multipart: boolean, blockstates: BlockState[], properties: Record<string, string[]> = {}) {
     super(location, name)
     this.item = item
     this.multipart = multipart
     this.blockstates = blockstates
+    this.properties = properties
   }
 
   static fromJson(location: Location, json: any): Block {
@@ -25,7 +28,8 @@ export class Block extends Element {
       json.name, 
       json.multipart, 
       json.states[0]?.addictionable === true, 
-      json.states.map((blocstate: any) => BlockState.fromJson(blocstate))
+      json.states.map((blocstate: any) => BlockState.fromJson(blocstate)),
+      json.properties
     )
   }
 
@@ -34,7 +38,8 @@ export class Block extends Element {
       name: this.name,
       item: this.item?.location.toJson(),
       multipart: this.multipart,
-      states: this.blockstates.map((blocstate, i) => blocstate.toJson(this.location, i))
+      states: this.blockstates.map((blocstate, i) => blocstate.toJson(this.location, i)),
+      properties: this.properties
     }
   }
 
@@ -53,7 +58,9 @@ export class Block extends Element {
       item = new Item(location, name, itemJson)
     }
 
-    return new Block(location, name, item, multipart, blockstates)
+    const block = new Block(location, name, item, multipart, blockstates)
+    block.buildProperties()
+    return block
   }
 
   model(conditions: Condition | Record<string, string>): [number, number][] {
@@ -74,6 +81,19 @@ export class Block extends Element {
     }
 
     return indexes
+  }
+
+  buildProperties() {
+    this.properties = {}
+    this.blockstates.forEach((blockstate) => {
+      Object.entries(blockstate.condition.conditions).forEach((property) => {
+        if(this.properties[property[0]] === undefined) {
+          this.properties[property[0]] = [property[1]]
+        } else if(!this.properties[property[0]].includes(property[1])) {
+          this.properties[property[0]].push(property[1])
+        }
+      }) 
+    })
   }
 
   get path(): string {

@@ -17,6 +17,10 @@ export class Pos2D {
 
     constructor(readonly x: number, readonly z: number) { }
 
+    equals(pos: Pos2D): boolean {
+        return this.x === pos.x && this.z === pos.z
+    }
+
     distance(pos: Pos2D): number {
         return Math.sqrt(Math.pow(this.x - pos.x, 2) + Math.pow(this.z - pos.z, 2))
     }
@@ -40,8 +44,7 @@ export class Pos2D {
     static fromJson(json: any): Pos2D {
         return new Pos2D(json[0], json[1])
     }
-
-    toJSON() {
+    toJSON(): number[] {
         return [this.x, this.z]
     }
 }
@@ -49,6 +52,10 @@ export class Pos2D {
 export class Size2D {
 
     constructor(readonly width: number, readonly length: number) { }
+
+    equals(pos: Size2D): boolean {
+        return this.width === pos.width && this.length === pos.length
+    }
 
     plus(size: Size2D): Size2D {
         return new Size2D(this.width + size.width, this.length + size.length)

@@ -3,6 +3,7 @@ import { error, notFound } from './routes/util.js'
 import { renderRouter } from './routes/render.js'
 import { dataPackRouter } from './routes/data-pack.js'
 import { projectRouter } from './routes/project.js'
+import { loader } from './elements/loader.js'
 
 const log = console.log
 console.log = (...args) => {

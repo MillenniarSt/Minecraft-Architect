@@ -48,7 +48,3 @@ renderRouter.get('/objects', (req, res) => {
 
     success(res, Object.fromEntries(entries))
 })
-
-renderRouter.post('/schematic', (req, res) => {
-    success(res, Schematic.fromJson(req.body).build())
-})

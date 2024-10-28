@@ -21,6 +21,10 @@ export class Pos3D extends Pos2D {
         super(x, z)
     }
 
+    equals(pos: Pos3D): boolean {
+        return this.x === pos.x && this.z === pos.z && this.y === pos.y
+    }
+
     distance(pos: Pos3D): number {
         return Math.sqrt(Math.pow(this.x - pos.x, 2) + Math.pow(this.z - pos.z, 2) + Math.pow(this.y - pos.y, 2))
     }
@@ -46,10 +50,10 @@ export class Pos3D extends Pos2D {
     }
 
     static fromJson(json: any) {
-        return new Pos3D(json[0], json[1], json[2])
+        return new Pos3D(json[0], json[2], json[1])
     }
 
-    toJSON() {
+    toJSON(): number[] {
         return [this.x, this.y, this.z]
     }
 }
@@ -58,6 +62,10 @@ export class Size3D extends Size2D {
 
     constructor(width: number, length: number, readonly height: number) {
         super(width, length)
+    }
+
+    equals(pos: Size3D): boolean {
+        return this.width === pos.width && this.length === pos.length && this.height === pos.height
     }
 
     plus(size: Size3D): Size3D {
@@ -69,7 +77,7 @@ export class Size3D extends Size2D {
     }
 
     static fromJson(json: any) {
-        return new Size3D(json[0], json[1], json[2])
+        return new Size3D(json[0], json[2], json[1])
     }
 
     toJSON() {

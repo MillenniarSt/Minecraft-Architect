@@ -46,7 +46,7 @@ export class ItemModel {
   }
 
   static fromJson(json: any): ItemModel {
-    return new ItemModel(json.cubes.map((cube: any) => Cube.fromJson(cube)), Display.fromJson(json.display))
+    return new ItemModel(new RenderObject(json.cubes.map((cube: any) => Cube.fromJson(cube))), Display.fromJson(json.display))
   }
 
   static resource(json: any, pTextures: Record<string, string> = {}): ItemModel {
@@ -175,3 +175,7 @@ export class Display {
     }
   }
 }
+
+const ITEM_UNDEFINED = new Item(Location.minecraft('undefined'), 'Undefined', new ItemModel(new RenderObject([
+  new Cube(new Dimension3D(Pos3D.ZERO, Size3D.UNIT), [])
+])))

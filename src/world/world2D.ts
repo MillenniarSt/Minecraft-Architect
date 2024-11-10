@@ -51,6 +51,9 @@ export class Pos2D {
 
 export class Size2D {
 
+    static readonly ZERO = new Size2D(0, 0)
+    static readonly UNIT = new Size2D(1, 1)
+
     constructor(readonly width: number, readonly length: number) { }
 
     equals(pos: Size2D): boolean {
@@ -65,6 +68,18 @@ export class Size2D {
         return new Size2D(this.width - size.width, this.length - size.length)
     }
 
+    min(size: Size2D): Size2D {
+        return new Size2D(Math.min(this.width, size.width), Math.min(this.length, size.length))
+    }
+
+    max(size: Size2D): Size2D {
+        return new Size2D(Math.max(this.width, size.width), Math.max(this.length, size.length))
+    }
+
+    range(min: Size2D, max: Size2D): Size2D {
+        return new Size2D(Math.max(min.width, Math.min(this.width, max.width)), Math.max(min.length, Math.min(this.length, max.length)))
+    }
+
     static fromJson(json: any): Size2D {
         return new Size2D(json[0], json[1])
     }
@@ -76,18 +91,35 @@ export class Size2D {
 
 export class Dimension2D {
 
+    static readonly ZERO = new Dimension2D(Pos2D.ZERO, Size2D.ZERO)
+
     constructor(readonly pos: Pos2D, readonly size: Size2D) { }
 
     static fromPoss(start: Pos2D, end: Pos2D) {
         return new Dimension2D(
             new Pos2D(Math.min(start.x, end.x), Math.min(start.z, end.z)),
-            new Size2D(Math.abs(end.x - start.x) +1, Math.abs(end.z - start.z) +1)
+            new Size2D(Math.abs(end.x - start.x), Math.abs(end.z - start.z))
+        )
+    }
+
+    get extreme(): Pos2D {
+        return new Pos2D(this.pos.x + this.size.width, this.pos.z + this.size.length)
+    }
+
+    plus(dimension: Dimension2D): Dimension2D {
+        return Dimension2D.fromPoss(
+            new Pos2D(Math.min(this.pos.x, dimension.pos.x), Math.min(this.pos.z, dimension.pos.z)),
+            new Pos2D(Math.max(this.extreme.x, dimension.extreme.x), Math.max(this.extreme.z, dimension.extreme.z))
         )
     }
 
     contains(pos: Pos2D) {
         return ((pos.x >= this.pos.x && pos.x <= this.pos.x + this.size.width -1) || this.size.width == 0) &&
                 ((pos.z >= this.pos.z && pos.z <= this.pos.z + this.size.length -1) || this.size.length == 0)
+    }
+
+    center(): Pos2D {
+        return new Pos2D(this.pos.x + (this.size.width / 2), this.pos.z + (this.size.length / 2))
     }
 
     static fromJson(json: any): Dimension2D {

@@ -60,6 +60,9 @@ export class Pos3D extends Pos2D {
 
 export class Size3D extends Size2D {
 
+    static readonly ZERO = new Size3D(0, 0, 0)
+    static readonly UNIT = new Size3D(1, 1, 1)
+
     constructor(width: number, length: number, readonly height: number) {
         super(width, length)
     }
@@ -76,6 +79,18 @@ export class Size3D extends Size2D {
         return new Size3D(this.width - size.width, this.length - size.length, this.height - size.height)
     }
 
+    min(size: Size3D): Size3D {
+        return new Size3D(Math.min(this.width, size.width), Math.min(this.length, size.length), Math.min(this.height, size.height))
+    }
+
+    max(size: Size3D): Size3D {
+        return new Size3D(Math.max(this.width, size.width), Math.max(this.length, size.length), Math.max(this.height, size.height))
+    }
+
+    range(min: Size3D, max: Size3D): Size3D {
+        return new Size3D(Math.max(min.width, Math.min(this.width, max.width)), Math.max(min.length, Math.min(this.length, max.length)), Math.max(min.height, Math.min(this.height, max.height)))
+    }
+
     static fromJson(json: any) {
         return new Size3D(json[0], json[2], json[1])
     }
@@ -86,6 +101,8 @@ export class Size3D extends Size2D {
 }
 
 export class Dimension3D extends Dimension2D {
+
+    static readonly ZERO = new Dimension3D(Pos3D.ZERO, Size3D.ZERO)
 
     constructor(readonly pos: Pos3D, readonly size: Size3D) {
         super(pos, size)
@@ -98,10 +115,25 @@ export class Dimension3D extends Dimension2D {
         )
     }
 
+    get extreme(): Pos3D {
+        return new Pos3D(this.pos.x + this.size.width, this.pos.z + this.size.length, this.pos.y + this.size.height)
+    }
+
+    plus(dimension: Dimension3D): Dimension3D {
+        return Dimension3D.fromPoss(
+            new Pos3D(Math.min(this.pos.x, dimension.pos.x), Math.min(this.pos.z, dimension.pos.z), Math.min(this.pos.y, dimension.pos.y)),
+            new Pos3D(Math.max(this.extreme.x, dimension.extreme.x), Math.max(this.extreme.z, dimension.extreme.z), Math.max(this.extreme.y, dimension.extreme.y))
+        )
+    }
+
     contains(contain: Pos3D) {
         return ((contain.x >= this.pos.x && contain.x <= this.pos.x + this.size.width -1) || this.size.width == 0) &&
                 ((contain.z >= this.pos.z && contain.z <= this.pos.z + this.size.length -1) || this.size.length == 0) &&
                 ((contain.y >= this.pos.y && contain.y <= this.pos.y + this.size.height -1) || this.size.height == 0)
+    }
+
+    center(): Pos3D {
+        return new Pos3D(this.pos.x + (this.size.width / 2), this.pos.z + (this.size.length / 2), this.pos.y + (this.size.height / 2))
     }
 
     static fromJson(json: any): Dimension3D {

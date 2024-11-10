@@ -1,9 +1,7 @@
-import express, { NextFunction, Request, Response } from 'express'
-import { error, notFound } from './routes/util.js'
-import { renderRouter } from './routes/render.js'
-import { dataPackRouter } from './routes/data-pack.js'
-import { projectRouter } from './routes/project.js'
+import { OnMessage, openSocketServer } from './socket.js'
 import { loader } from './elements/loader.js'
+import { registerRenderMessages } from './elements/render.js'
+import { registerSchematicMessages } from './builder/data-pack/schematic.js'
 
 const log = console.log
 console.log = (...args) => {
@@ -12,39 +10,28 @@ console.log = (...args) => {
 
 console.log('Minecraft Starting...')
 
-// Send Plugin Data
+const port = 8990
+
+// Send Architect Data
 
 if (process.send) {
     process.send({
         identifier: 'minecraft',
         name: 'Minecraft',
-        port: 8990
+        port: port
     })
 }
 
-// Express
+// Socket
 
-const app = express()
+const socketMessages: OnMessage = new Map([
+    ['open-project', (data, ws) => {
+        loader.load()
+        ws.respond({})
+    }]
+])
 
-app.use(express.json())
+registerRenderMessages(socketMessages)
+registerSchematicMessages(socketMessages)
 
-app.use('/project', projectRouter)
-app.use('/render', renderRouter)
-app.use('/data-pack', dataPackRouter)
-
-app.get('*', (req, res) => notFound(res))
-app.post('*', (req, res) => notFound(res))
-app.put('*', (req, res) => notFound(res))
-app.delete('*', (req, res) => notFound(res))
-
-app.use((err: any, req: Request, res: Response, next: NextFunction) => error(res, err))
-
-const server = app.listen(8990, () => console.log('Minecraft Express open on http://localhost:8990/'))
-
-server.on('error', (error: any) => {
-    if (error.code === 'EADDRINUSE') {
-        console.log('Server already open on port 8990')
-    } else {
-        console.error(`Error: ${error.message}`)
-    }
-})
+openSocketServer(port, socketMessages)

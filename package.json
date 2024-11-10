@@ -8,22 +8,23 @@
     "start": "npx tsc & node dist/index.js",
     "restart": "node dist/index.js",
     "compile": "npx tsc",
-    "install": "gulp install",
+    "install": "npx tsc & gulp install",
     "ci": "npx tsc & gulp install-src",
     "i": "gulp install-src",
-    "ir": "npx tsc & gulp install-resources",
-    "im": "npx tsc & gulp install-modules",
-    "clean": "gulp clean"
+    "ir": "gulp install-resources",
+    "im": "gulp install-modules",
+    "uninstall": "gulp uninstall",
+    "compress": "gulp compress"
   },
   "author": "Millenniar",
   "license": "ISC",
   "devDependencies": {
     "@types/adm-zip": "^0.5.5",
-    "@types/express": "^4.17.21",
     "@types/fs-extra": "^11.0.4",
     "@types/node": "^22.5.5",
     "@types/pngjs": "^6.0.5",
     "@types/uuid": "^10.0.0",
+    "@types/ws": "^8.5.13",
     "gulp": "^5.0.0",
     "typescript": "^5.6.2"
   },
@@ -31,9 +32,9 @@
     "adm-zip": "^0.5.16",
     "appdata-path": "^1.0.0",
     "chalk": "^5.3.0",
-    "express": "^4.21.0",
     "fs-extra": "^11.2.0",
     "pngjs": "^7.0.0",
-    "uuid": "^10.0.0"
+    "uuid": "^10.0.0",
+    "ws": "^8.18.0"
   }
 }

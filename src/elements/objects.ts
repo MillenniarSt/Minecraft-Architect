@@ -45,10 +45,11 @@ export class Cube {
 
     rotation: Rotation3D = Rotation3D.north()
     dimension: Dimension3D
-    faces: [Texture?, Texture?, Texture?, Texture?, Texture?, Texture?] = []
+    faces: [Texture?, Texture?, Texture?, Texture?, Texture?, Texture?]
 
-    constructor(dimension: Dimension3D) {
+    constructor(dimension: Dimension3D, faces: [Texture?, Texture?, Texture?, Texture?, Texture?, Texture?] = []) {
         this.dimension = dimension
+        this.faces = faces
     }
 
     static resource(json: any, textures: any): Cube {

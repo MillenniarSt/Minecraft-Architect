@@ -40,7 +40,6 @@ export type EditGraph = {
         rotate?: [number, number, number]
     },
     dimension?: { pos: number[], size: number[] }
-    center?: number[]
 }
 
 export abstract class BuilderElement {
@@ -70,15 +69,6 @@ export abstract class BuilderElement {
     abstract updateForm(updates: FormDataOutput, save: () => {}): BuilderElementUpdates
 
     abstract push(elements: BuilderElement[], save: () => {}): BuilderElementUpdates
-
-    select(elements: BuilderElement[]): BuilderElementUpdates {
-        return {
-            client: {
-                form: this.form(),
-                editGraph: this.editGraph()
-            }
-        }
-    }
 
 
     abstract toJson(): {}

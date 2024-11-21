@@ -78,8 +78,7 @@ export class BuilderElementGroup extends BuilderElement {
             modes: {
                 move: [1, 1, 1]
             },
-            dimension: this.dimension.toJSON(),
-            center: this.dimension.center().toJSON()
+            dimension: this.dimension.toJSON()
         }
     }
 

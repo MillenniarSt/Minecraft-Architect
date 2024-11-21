@@ -1,0 +1,7 @@
+{
+    "identifier": "minecraft",
+    "version": "0.0.0",
+
+    "name": "Minecraft",
+    "icon": "resources\\icon.png"
+}

@@ -1,37 +1,33 @@
-import { OnMessage, openSocketServer } from './socket.js'
-import { loader } from './elements/loader.js'
-import { registerRenderMessages } from './elements/render.js'
+import { OnMessage } from './socket.js'
+import { loader } from './minecraft/loader.js'
+import { registerRenderMessages } from './minecraft/messages.js'
 import { registerSchematicMessages } from './builder/data-pack/schematic.js'
+import { registerElementsMessages } from './elements/messages.js'
+import { Project, setProject } from './project.js'
 
 const log = console.log
 console.log = (...args) => {
     log('[   Minecraft    ] ', ...args)
 }
 
-console.log('Minecraft Starting...')
+console.log('Minecraft Starting, waiting for server data...')
 
-const port = 8990
+process.on('message', async (message) => {
+    const data = JSON.parse(message as string)
 
-// Send Architect Data
+    const socketMessages: OnMessage = new Map([
+        ['open-project', (data, ws) => {
+            loader.load()
+            ws.respond({})
+        }]
+    ])
 
-if (process.send) {
-    process.send({
-        identifier: 'minecraft',
-        name: 'Minecraft',
-        port: port
-    })
-}
+    registerRenderMessages(socketMessages)
+    registerSchematicMessages(socketMessages)
+    registerElementsMessages(socketMessages)
 
-// Socket
+    setProject(new Project(data.identifier, data.port, socketMessages))
 
-const socketMessages: OnMessage = new Map([
-    ['open-project', (data, ws) => {
-        loader.load()
-        ws.respond({})
-    }]
-])
-
-registerRenderMessages(socketMessages)
-registerSchematicMessages(socketMessages)
-
-openSocketServer(port, socketMessages)
+    console.log('Architect started')
+    process.send!('done')
+})

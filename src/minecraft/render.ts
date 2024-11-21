@@ -1,7 +1,7 @@
 import fs from "fs-extra"
 import path from "path"
 import { Dimension3D, Pos3D, Rotation3D, Size3D } from "../world/world3D.js"
-import { Location } from "./element.js"
+import { Location } from "./objects/object.js"
 import { loader } from "./loader.js"
 import { PNG } from "pngjs"
 import { toGrades, toRadiants } from "../world/world2D.js"

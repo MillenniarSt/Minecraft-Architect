@@ -1,10 +1,10 @@
 import { v4 } from "uuid"
 import { displayName, FormDataInput, FormDataOutput } from "../../util.js"
 import { Dimension3D, Pos3D, Size3D } from "../../world/world3D.js"
-import { Location } from "../../elements/element.js"
-import { loader } from "../../elements/loader.js"
+import { Location } from "../../minecraft/objects/object.js"
+import { loader } from "../../minecraft/loader.js"
 import { Anchor, BuilderElement, BuilderElementNode, BuilderElementUpdates, EditGraph, ElementView } from "./elements.js"
-import { Block } from "../../elements/block.js"
+import { Block } from "../../minecraft/objects/block.js"
 
 export class BlockElement extends BuilderElement {
 
@@ -79,7 +79,7 @@ export class BlockElement extends BuilderElement {
             modes: {
                 move: [1, 1, 1]
             },
-            center: this.position.plus(new Pos3D(0.5, 0.5, 0.5)).toJSON()
+            dimension: this.dimension.toJSON()
         }
     }
 
@@ -154,9 +154,7 @@ export class BlockElement extends BuilderElement {
     }
 
     checkProperties() {
-        console.log(Object.entries(this.block.properties))
         this.properties = Object.fromEntries(Object.entries(this.block.properties).map((property) => [property[0], this.properties[property[0]] ?? property[1][0]]))
-        console.log(this.properties)
     }
 
     toJson(): {} {

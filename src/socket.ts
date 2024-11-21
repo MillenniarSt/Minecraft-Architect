@@ -31,8 +31,7 @@ export type WsActions = {
     sendAll: (path: string, data?: {}) => void
 }
 
-export function openSocketServer(port: number, onMessage: OnMessage): WebSocketServer {
-    const wss = new WebSocketServer({ port })
+export function openSocketServer(wss: WebSocketServer, port: number, onMessage: OnMessage): WebSocketServer {
 
     console.log(`[ Socket ] |  OPEN  | WebSocketServer open on port ${port}`)
 

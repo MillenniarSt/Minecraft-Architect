@@ -18,6 +18,7 @@ gulp.task('install-src', async () => {
 gulp.task('install-resources', async () => {
     try {
         await fs.copy(path.join(__dirname, 'resources'), path.join(getAppDataPath.default('Beaver Architect'), 'architects', 'minecraft', 'resources'))
+        await fs.copy(path.join(__dirname, 'architect.json'), path.join(getAppDataPath.default('Beaver Architect'), 'architects', 'minecraft', 'architect.json'))
         console.log('Architect resources Installed')
     } catch (err) {
         console.error('Error while copying plugin resources', err)

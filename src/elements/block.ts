@@ -1,225 +1,169 @@
-import { Rotation3D } from '../world/world3D.js'
-import { Location, Element } from '../elements/element.js'
-import { Item } from './item.js'
-import { loader } from './loader.js'
-import { Cube, RenderObject } from './objects.js'
-import path from 'path'
+import { v4 } from "uuid"
+import { displayName, FormDataInput, FormDataOutput } from "../util.js"
+import { Dimension3D, Pos3D, Size3D } from "../world/world3D.js"
+import { Location } from "../minecraft/objects/object.js"
+import { loader } from "../minecraft/loader.js"
+import { BuilderElement, BuilderElementNode, EditGraph, BuilderElementUpdateData, ElementView } from "./elements.js"
+import { Block } from "../minecraft/objects/block.js"
 
-export class Block extends Element {
+export class BlockElement extends BuilderElement {
 
-  item?: Item
-  multipart: boolean
-  blockstates: BlockState[]
-
-  properties: Record<string, string[]>
-
-  constructor(location: Location, name: string, item: Item | undefined, multipart: boolean, blockstates: BlockState[], properties: Record<string, string[]> = {}) {
-    super(location, name)
-    this.item = item
-    this.multipart = multipart
-    this.blockstates = blockstates
-    this.properties = properties
-  }
-
-  static fromJson(location: Location, json: any): Block {
-    const itemLoc = json.item ? Location.fromJson(json.item) : undefined
-    return new Block(
-      location, 
-      json.name, 
-      json.multipart, 
-      json.states[0]?.addictionable === true, 
-      json.states.map((blocstate: any) => BlockState.fromJson(blocstate)),
-      json.properties
-    )
-  }
-
-  toJson(): { [key: string]: any } {
-    return {
-      name: this.name,
-      item: this.item?.location.toJson(),
-      multipart: this.multipart,
-      states: this.blockstates.map((blocstate, i) => blocstate.toJson(this.location, i)),
-      properties: this.properties
-    }
-  }
-
-  static resource(location: Location, name: string, json: any): Block {
-    const multipart = json.multipart !== undefined
-    let blockstates
-    let item
-
-    if (multipart) {
-      blockstates = json.multipart.map((part: any) => BlockState.resource(part.apply, part.when))
-    } else {
-      blockstates = Object.keys(json.variants).map((condition) => BlockState.resource(json.variants[condition], condition))
-    }
-    const itemJson = loader.resourceJson('models/item', location)
-    if (itemJson) {
-      item = new Item(location, name, itemJson)
+    constructor(
+        public position: Pos3D,
+        public _location: Location | undefined,
+        public properties: Record<string, string> = {},
+        id?: string
+    ) {
+        super(id ?? v4(), position)
     }
 
-    const block = new Block(location, name, item, multipart, blockstates)
-    block.buildProperties()
-    return block
-  }
+    static fromJson(json: any): BlockElement {
+        return new BlockElement(Pos3D.fromJson(json.pos), Location.fromJson(json.data.location), json.data.properties, json.id)
+    }
 
-  model(conditions: Condition | Record<string, string>): [number, number][] {
-    let indexes: [number, number][] = []
+    getDimension(): Dimension3D {
+        return new Dimension3D(this.position, Size3D.UNIT)
+    }
 
-    if (this.multipart) {
-      this.blockstates.forEach((blockstate, i) => {
-        if(blockstate.condition.equals(conditions)) {
-          indexes.push([i, Math.floor(Math.random() * blockstate.models.length)])
+    setDimension(dimension: Dimension3D): BuilderElementUpdateData {
+        this.position = dimension.pos
+        return {
+            dimension: { pos: this.position.toJSON(), size: [1, 1, 1] },
+            view: this.view(),
+            updates: [{
+                id: this.id,
+                view: this.view(),
+                form: true,
+                editGraph: true
+            }]
         }
-      })
-    } else {
-      this.blockstates.forEach((blockstate, i) => {
-        if(blockstate.condition.equals(conditions)) {
-          indexes = [[i, Math.floor(Math.random() * blockstate.models.length)]]
-        }
-      })
     }
 
-    return indexes
-  }
-
-  buildProperties() {
-    this.properties = {}
-    this.blockstates.forEach((blockstate) => {
-      Object.entries(blockstate.condition.conditions).forEach((property) => {
-        if(this.properties[property[0]] === undefined) {
-          this.properties[property[0]] = [property[1]]
-        } else if(!this.properties[property[0]].includes(property[1])) {
-          this.properties[property[0]].push(property[1])
+    node(): BuilderElementNode {
+        return {
+            id: this.id,
+            label: this.block.name,
         }
-      }) 
-    })
-  }
-
-  get path(): string {
-    return loader.dataFile("block", this.location, "json")
-  }
-
-  renderToSave(): Record<string, RenderObject> {
-    let renders: [PropertyKey, RenderObject][] = []
-
-    this.blockstates.forEach((blockstate, i) => {
-       blockstate.models.forEach((model, j) => {
-        renders.push([path.join(loader.renderDir, 'blocks', `${this.location.toDir()}-${i}-${j}.json`), model.render])
-       })
-    })
-
-    return Object.fromEntries(renders)
-  }
-}
-
-export class BlockState {
-  
-  constructor(readonly models: BlockModel[], readonly condition: Condition = Condition.all()) { }
-
-  static resource(models: any, condition: any): BlockState {
-    return new BlockState(
-      Array.isArray(models)
-        ? models.map((model: any) => BlockModel.resource(loader.resourceJson('models', Location.fromJson(model.model)), {}, Rotation3D.fromGradeAxis(model)))
-        : [BlockModel.resource(loader.resourceJson('models', Location.fromJson(models['model'])), {}, Rotation3D.fromGradeAxis(models))],
-      Condition.resource(condition)
-    )
-  }
-
-  static fromJson(json: any): BlockState {
-    return new BlockState(json.models.map((model: any) => new BlockModel(model)), Condition.fromJson(json.condition))
-  }
-
-  toJson(location: Location, blockstate: number): {} {
-    return {
-      condition: this.condition.toJson(),
-      models: this.models.map((model, i) => model.toJson(location, blockstate, i))
     }
-  }
-}
 
-export class Condition {
+    form(): FormDataInput[] {
+        let blockForm: FormDataInput[] = [
+            {
+                id: 'location',
+                name: 'Block',
+                type: 'text',
+                options: 'blocks',
+                value: this.location?.toString()
+            },
+            {
+                id: 'pos',
+                name: 'Position',
+                type: 'vec3',
+                value: this.position.toJSON()
+            }
+        ]
+        if (Object.entries(this.properties).length > 0) {
+            const blockProperties = Object.entries(this.block.properties)
+            blockForm.push({
+                name: 'Properties',
+                type: 'separator'
+            })
+            blockProperties.forEach((property) => {
+                blockForm.push({
+                    id: `p-${property[0]}`,
+                    name: displayName(property[0]),
+                    type: 'select',
+                    options: property[1].map((p) => {
+                        return { value: p, label: displayName(p) }
+                    }),
+                    value: this.properties[property[0]]
+                })
+            })
+        }
+        return blockForm
+    }
 
-  constructor(readonly conditions: Record<string, string>) { }
+    editGraph(): EditGraph {
+        return {
+            modes: {
+                move: [1, 1, 1]
+            },
+            dimension: this.getDimension().toJSON()
+        }
+    }
 
-  static all(): Condition {
-    return new Condition({})
-  }
 
-  static fromJson(json: any): Condition {
-    return new Condition(json)
-  }
+    view(): ElementView {
+        const models = this.block.model(this.properties) ?? [0, 0]
+        return {
+            id: this.id,
+            objects: [{
+                position: this.position.toJSON(),
+                models: models.map(([i, j]) => `${this.location!.toString()}-${i}-${j}`)
+            }]
+        }
+    }
 
-  static resource(json: any): Condition {
-    if (typeof json === 'string' && json.length > 0) {
-      return new Condition(Object.fromEntries(
-        json.split(',').map(condition => {
-          const [key, value] = condition.split('=')
-          return [key, value]
+    updateForm(updates: FormDataOutput): BuilderElementUpdateData {
+        let updateForm = false
+        let updateGraph = false
+
+        if(updates.pos && updates.pos !== this.position.toJSON()) {
+            this.position = Pos3D.fromJson(updates.pos)
+            updateGraph = true
+        }
+
+        Object.entries(updates).filter((property) => property[0].startsWith('p-')).forEach((property) => {
+            const key = property[0].substring(2)
+            if(this.properties[key] !== property[1]) {
+                this.properties[key] = property[1]
+            }
         })
-      ))
-    } else if (typeof json === 'object') {
-      return new Condition(json)
-    } else {
-      return new Condition({})
-    }
-  }
 
-  toJson(): any {
-    return this.conditions
-  }
+        if (updates.location && updates.location !== this.location?.toString() && loader.blocks.has(updates.location)) {
+            this.location = Location.fromJson(updates.location)
+            updateForm = true
+        }
 
-  equals(other: Condition | Record<string, string>): boolean {
-    const conditions = other instanceof Condition ? other.conditions : other
-    return Object.entries(this.conditions).every(([key, value]) => 
-      conditions[key] && conditions[key].toString() === value.toString()
-    )
-  }
-}
-
-export class BlockModel {
-
-  constructor(readonly render: RenderObject) { }
-
-  static resource(json: any, pTextures: Record<string, string>, rotation?: Rotation3D): BlockModel {
-    let cubes: Cube[] = []
-
-    const textures = {
-      ...(json.textures && Object.fromEntries(
-        Object.keys(json.textures).map((key) => {
-          const value = json.textures[key]
-          return [
-            key,
-            (value as string)[0] === '#' ? pTextures[(value as string).substring(1)] || json.textures[(value as string).substring(1)] : value
-          ]
-        })
-      )),
-      ...pTextures
+        return {
+            data: this.data,
+            view: this.view(),
+            label: this.node().label,
+            dimension: this.getDimension().toJSON(),
+            updates: [{
+                id: this.id,
+                view: this.view(),
+                form: updateForm,
+                editGraph: updateGraph
+            }]
+        }
     }
 
-    if (json.elements) {
-      cubes = json.elements.map((element: any) => Cube.resource(element, textures))
+    get block(): Block {
+        let block: Block | undefined
+        if (this.location) {
+            block = loader.blocks.get(this.location.toString())
+        }
+        return block ?? loader.blocks.get('minecraft:undefined')!
     }
 
-    if (json.parent) {
-      const parentModel = BlockModel.resource(loader.resourceJson('models', Location.fromJson(json.parent)), textures)
-      cubes.push(...parentModel.render.cubes)
+    get location(): Location | undefined {
+        return this._location
     }
 
-    if(rotation) {
-      cubes.forEach((cube) => cube.rotate(rotation))
+    set location(location: Location) {
+        this._location = location
+        this.checkProperties()
     }
 
-    return new BlockModel(new RenderObject(cubes))
-  }
-
-  static fromJson(json: any): BlockModel {
-    return new BlockModel(json.cubes.map((cube: any) => Cube.fromJson(cube)))
-  }
-
-  toJson(location: Location, blockstate: number, index: number): any {
-    return {
-      render: path.join(loader.renderDir, 'blocks', `${location.toDir()}-${blockstate}-${index}.json`)
+    checkProperties() {
+        this.properties = Object.fromEntries(Object.entries(this.block.properties).map((property) => [property[0], this.properties[property[0]] ?? property[1][0]]))
     }
-  }
+
+    get data(): {} {
+        return {
+            location: this.location?.toJson(),
+            properties: this.properties
+        }
+    }
 }

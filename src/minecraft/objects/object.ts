@@ -1,6 +1,6 @@
 import fs from 'fs-extra'
 import path from 'path'
-import { RenderObject } from './objects.js'
+import { RenderObject } from '../render.js'
 
 export class Location {
 
@@ -13,7 +13,7 @@ export class Location {
   static fromJson(json: string): Location {
     return new Location(
       json.includes(':') ? json.substring(0, json.indexOf(':')) : 'minecraft',
-      json.includes(':') ? json.substring(json.indexOf(':') +1) : json
+      json.includes(':') ? json.substring(json.indexOf(':') + 1) : json
     )
   }
 
@@ -34,7 +34,7 @@ export class Location {
   }
 }
 
-export abstract class Element {
+export abstract class MinecraftObject {
 
   constructor(readonly location: Location, readonly name: string) { }
 
@@ -42,7 +42,7 @@ export abstract class Element {
 
   abstract get path(): string
 
-  equals(other: Element): boolean {
+  equals(other: MinecraftObject): boolean {
     return this.location === other.location
   }
 

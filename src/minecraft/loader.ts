@@ -1,10 +1,10 @@
 import fs from 'fs-extra'
-import { Item } from "./item.js"
+import { Item } from "./objects/item.js"
 import AdmZip from "adm-zip"
-import { Location } from "../elements/element.js"
+import { Location } from "./objects/object.js"
 import path from "path"
 import getAppDataPath from 'appdata-path'
-import { Block } from "./block.js"
+import { Block } from "./objects/block.js"
 import { dataDir, minecraftDir, renderDir } from "../paths.js"
 
 export class MinecraftLoader {

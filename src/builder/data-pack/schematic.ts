@@ -1,4 +1,4 @@
-import { Location } from "../../elements/element.js"
+import { Location } from "../../minecraft/objects/object.js"
 import { OnMessage, WsActions } from "../../socket.js"
 import { FormDataOutput } from "../../util.js"
 import { Dimension3D, Pos3D, Size3D } from "../../world/world3D.js"
@@ -34,10 +34,6 @@ export class Schematic {
 
     tree(): BuilderElementNode[] {
         return this.elements.map((element) => element.node())
-    }
-
-    getSelectionData(ids: string[]): BuilderElementUpdates {
-        return this.getById(ids[0]).select(ids.slice(1).map((id) => this.getById(id)))
     }
 
     updateForm(ids: string[], updates: FormDataOutput): BuilderElementUpdates {
@@ -81,6 +77,7 @@ export class Schematic {
     }
 
     deleteElements(ids: string[]): BuilderElementUpdates {
+        let deleted: string[] = []
         ids.forEach((id) => {
             const parent = this.getParentOf(id)
             if (parent) {
@@ -90,6 +87,7 @@ export class Schematic {
             }
             if (parent !== undefined) {
                 const recursiveDelete = (element: BuilderElement) => {
+                    deleted.push(element.id)
                     this.elementsMap.delete(element.id)
                     element.children.forEach((child) => recursiveDelete(child))
                 }
@@ -98,7 +96,7 @@ export class Schematic {
         })
         return {
             file: this.toJson(),
-            updates: ids.map((id) => {
+            updates: deleted.map((id) => {
                 return {
                     id: id,
                     mode: 'delete'
@@ -201,9 +199,15 @@ export function registerSchematicMessages(messages: OnMessage) {
         }
     }))
 
-    messages.set('data-pack/schematics/selection', (data, ws) => ensureSchematic(data.path, ws, (schematic) =>
-        ws.respond(schematic.getSelectionData(data.selection).client ?? {})
-    ))
+    messages.set('data-pack/schematics/update-selection', (data, ws) => ensureSchematic(data.path, ws, (schematic) => {
+        const element = schematic.getById(data.selection[0])
+        return {
+            client: {
+                form: data.form ? element.form() : undefined,
+                editGraph: data.editGraph ? element.editGraph() : undefined
+            }
+        }
+    }))
     messages.set('data-pack/schematics/update-form', (data, ws) => ensureSchematic(data.path, ws, (schematic) =>
         schematic.updateForm(data.selection, data.updates)
     ))

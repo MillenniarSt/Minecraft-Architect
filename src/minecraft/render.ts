@@ -1,6 +1,6 @@
 import fs from "fs-extra"
 import path from "path"
-import { Dimension3D, Pos3D, Rotation3D, Size3D } from "../world/world3D.js"
+import { Pos3D, Rotation3D, Size3D } from "../world/world3D.js"
 import { Location } from "./objects/object.js"
 import { loader } from "./loader.js"
 import { PNG } from "pngjs"
@@ -44,20 +44,19 @@ export function getFaceIndex(face: string): number {
 export class Cube {
 
     rotation: Rotation3D = Rotation3D.north()
-    dimension: Dimension3D
+    pos: Pos3D
+    size: Size3D
     faces: [Texture?, Texture?, Texture?, Texture?, Texture?, Texture?]
 
-    constructor(dimension: Dimension3D, faces: [Texture?, Texture?, Texture?, Texture?, Texture?, Texture?] = []) {
-        this.dimension = dimension
+    constructor(pos: Pos3D, size: Size3D, faces: [Texture?, Texture?, Texture?, Texture?, Texture?, Texture?] = []) {
+        this.pos = pos
+        this.size = size
         this.faces = faces
     }
 
     static resource(json: any, textures: any): Cube {
-        let dimension16 = Dimension3D.fromPoss(Pos3D.fromJson(json.from), Pos3D.fromJson(json.to))
-        let cube = new Cube(new Dimension3D(
-            new Pos3D(dimension16.pos.x / 16 + 0.5, dimension16.pos.y / 16 + 0.5, dimension16.pos.z / 16 + 0.5),
-            new Size3D(dimension16.size.width / 16, dimension16.size.height / 16, dimension16.size.length / 16)
-        ))
+        const size = new Size3D((json.to[0] - json.from[0]) / 16, (json.to[2] - json.from[2]) / 16, (json.to[1] - json.from[1]) / 16)
+        let cube = new Cube(new Pos3D(json.from[0] / 16 + (size.width / 2), json.from[2] / 16 + (size.length / 2), json.from[1] / 16 + (size.height / 2)), size)
 
         if (json.rotation) {
             cube.rotate(Rotation3D.axis(json.rotation.axis, toRadiants(json.rotation.angle)), Pos3D.fromJson(json.rotation.origin))
@@ -73,7 +72,7 @@ export class Cube {
     }
 
     static fromJson(json: any): Cube {
-        let cube = new Cube(json.dimension)
+        let cube = new Cube(json.pos, json.size)
 
         if (json.rotation) {
             cube.rotation = Rotation3D.fromJson(json.rotation)
@@ -89,7 +88,7 @@ export class Cube {
     }
 
     rotate(rotation: Rotation3D, pivot: Pos3D = new Pos3D(0.5, 0.5, 0.5)) {
-        let [cx, cy, cz] = this.dimension.pos.toJSON();
+        let [cx, cy, cz] = this.pos.toJSON();
 
         cx -= pivot.x
         cy -= pivot.y
@@ -119,14 +118,15 @@ export class Cube {
             cy = newY
         }
 
-        this.dimension = new Dimension3D(new Pos3D(cx + pivot.x, cy + pivot.y, cz + pivot.z), this.dimension.size)
+        this.pos = new Pos3D(cx + pivot.x, cz + pivot.z, cy + pivot.y)
         this.rotation = this.rotation.plus(rotation)
     }
 
     toJson() {
         return {
             rotation: this.rotation.toJSON(),
-            dimension: this.dimension.toJSON(),
+            pos: this.pos.toJSON(),
+            size: this.size.toJSON(),
             faces: [
                 ...this.faces.map((face) => face?.toJson())
             ]
@@ -140,7 +140,7 @@ export class Texture {
     readonly uv: [number, number, number, number]
     readonly color?: number
 
-    constructor(file: Location, uv: [number, number, number, number] = [0, 0, 16, 16], color?: number) {
+    constructor(file: Location, uv: [number, number, number, number] = [0, 0, 1, 1], color?: number) {
         this.location = file
         this.uv = uv
         this.color = color
@@ -149,7 +149,7 @@ export class Texture {
     static fromJson(json: any): Texture {
         return new Texture(
             Location.fromJson(json.location),
-            json.uv,
+            [json.uv[4], json.uv[5], json.uv[2], json.uv[3]],
             json.color
         )
     }
@@ -160,7 +160,7 @@ export class Texture {
 
         const texture = new Texture(
             location,
-            json.uv ?? [0, 0, 16, 16],
+            json.uv ? [json.uv[0] / 16, json.uv[1] / 16, json.uv[2] / 16, json.uv[3] / 16] : [0, 0, 1, 1],
             json.tintindex === 0 ? 0x36b90f : 0xffffff
         )
 
@@ -197,7 +197,12 @@ export class Texture {
     toJson() {
         return {
             texture: this.location.toJson(),
-            uv: this.uv,
+            uv: [
+                this.uv[0], this.uv[3], 
+                this.uv[2], this.uv[3], 
+                this.uv[0], this.uv[1], 
+                this.uv[2], this.uv[1]
+            ],
             color: this.color
         }
     }

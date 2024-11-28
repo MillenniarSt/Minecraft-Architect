@@ -3,7 +3,8 @@ import { loader } from './minecraft/loader.js'
 import { registerRenderMessages } from './minecraft/messages.js'
 import { registerSchematicMessages } from './builder/data-pack/schematic.js'
 import { registerElementsMessages } from './elements/messages.js'
-import { Project, setProject } from './project.js'
+import { project, Project, setProject } from './project.js'
+import { registerMaterialMessages } from './config/material.js'
 
 const log = console.log
 console.log = (...args) => {
@@ -22,11 +23,14 @@ process.on('message', async (message) => {
         }]
     ])
 
+    setProject(new Project(data.identifier, data.port))
+
     registerRenderMessages(socketMessages)
     registerSchematicMessages(socketMessages)
     registerElementsMessages(socketMessages)
+    registerMaterialMessages(socketMessages)
 
-    setProject(new Project(data.identifier, data.port, socketMessages))
+    project.open(socketMessages)
 
     console.log('Architect started')
     process.send!('done')

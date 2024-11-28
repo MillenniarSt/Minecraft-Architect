@@ -1,5 +1,6 @@
 {
-  "generation": {
+  "default": "oak",
+  "variations": {
     "shapes": {
       "slab": ["#_slab"], 
       "stairs": ["#_stairs"], 

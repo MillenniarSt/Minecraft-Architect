@@ -27,13 +27,13 @@ export type OnMessage = Map<string, (data: any, ws: WsActions) => void>
 
 export type WsActions = {
     respond: (data: {}, err?: WebSocketError) => void,
-    send: (path: string, data?: {}) => void, 
+    send: (path: string, data?: {}) => void,
     sendAll: (path: string, data?: {}) => void
 }
 
-export function openSocketServer(wss: WebSocketServer, port: number, onMessage: OnMessage): WebSocketServer {
+export function openSocketServer(wss: WebSocketServer, onMessage: OnMessage, onResponse: (res: WebSocketResponse) => void, onConnect: (ws: WebSocket) => void): WebSocketServer {
 
-    console.log(`[ Socket ] |  OPEN  | WebSocketServer open on port ${port}`)
+    console.log(`[ Socket ] |  OPEN  | WebSocketServer opened`)
 
     const sendAll = (path: string, data?: {}) => {
         debugSendMessage(path)
@@ -45,7 +45,9 @@ export function openSocketServer(wss: WebSocketServer, port: number, onMessage: 
     }
 
     wss.on('connection', (ws) => {
-        console.log(`[ Socket ] |  JOIN  | Client Connected on port ${port}`)
+        console.log(`[ Socket ] |  JOIN  | Client Connected`)
+
+        onConnect(ws)
 
         const send = (path: string, data?: {}) => {
             debugSendMessage(path)
@@ -53,7 +55,7 @@ export function openSocketServer(wss: WebSocketServer, port: number, onMessage: 
         }
 
         const respond = (id: string | undefined | null, data: {}, err?: WebSocketError) => {
-            if(id === undefined) {
+            if (id === undefined) {
                 console.log(chalk.red(`[ Socket ] |  RES   | ERR | Trying to respond without a response id`))
             } else {
                 debugRespondMessage(err)
@@ -63,18 +65,26 @@ export function openSocketServer(wss: WebSocketServer, port: number, onMessage: 
 
         ws.on('message', (data) => {
             try {
-                const message: WebSocketMessage = JSON.parse(data.toString())
-                debugGetMessage(message.path)
+                const message = JSON.parse(data.toString())
 
-                try {
-                    const f = onMessage.get(message.path)
-                    if(f) {
-                        f(message.data, { respond: (data, err) => respond(message.id, data, err), send, sendAll })
-                    } else {
-                        console.log(chalk.redBright(`[ Socket ] |  GET   | ERR | Invalid Message Path : ${message.path}`))
+                if (message.path) {
+                    debugGetMessage(message.path)
+
+                    try {
+                        const f = onMessage.get(message.path)
+                        if (f) {
+                            f(message.data, { respond: (data, err) => respond(message.id, data, err), send, sendAll })
+                        } else {
+                            console.log(chalk.redBright(`[ Socket ] |  GET   | ERR | Invalid Message Path : ${message.path}`))
+                        }
+                    } catch (error) {
+                        respond(message.id ?? null, { path: message.path, data: message.data }, toSocketError(error))
                     }
-                } catch(error) {
-                    respond(message.id ?? null, { path: message.path, data: message.data }, toSocketError(error))
+                } else {
+                    if(message.err) {
+                        console.log(chalk.redBright(`[ Socket ] |  GET   | ERR | Response Error : ${message.err.stack}`))
+                    }
+                    onResponse(message)
                 }
             } catch (error) {
                 console.log(chalk.redBright(`[ Socket ] |  GET   | ERR | Invalid Message`))

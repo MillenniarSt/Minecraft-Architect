@@ -78,7 +78,8 @@ export class ItemModel {
           .filter(layer => layer.indexOf('layer') === 0)
           .map(layer => {
             const cube = new Cube(
-              new Dimension3D(Pos3D.ZERO, new Size3D(16, 16, 0))
+              new Pos3D(0.5, 0, 0.5),
+              new Size3D(1, 0, 1)
             )
             const location = Location.fromJson(textures[layer].replace('/', '\\'))
             const texture = new Texture(location)
@@ -93,7 +94,8 @@ export class ItemModel {
           .filter(layer => layer.indexOf('layer') === 0)
           .map(layer => {
             const cube = new Cube(
-              new Dimension3D(Pos3D.ZERO, new Size3D(16, 16, 0))
+              new Pos3D(0.5, 0, 0.5),
+              new Size3D(1, 0, 1)
             )
             const location = Location.fromJson(textures[layer].replace('/', '\\'))
             const texture = new Texture(location)
@@ -175,7 +177,3 @@ export class Display {
     }
   }
 }
-
-const ITEM_UNDEFINED = new Item(Location.minecraft('undefined'), 'Undefined', new ItemModel(new RenderObject([
-  new Cube(new Dimension3D(Pos3D.ZERO, Size3D.UNIT), [])
-])))

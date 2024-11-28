@@ -1,22 +1,57 @@
-import { Material, MaterialGroup, Variation } from "./material.js"
+import path from "path"
+import fs from "fs"
+import { project } from "../project.js"
+import { configDir } from "../paths.js"
 
-export class ProjectConfig {
+export abstract class ProjectConfig {
 
-    materialVariations: {
-        shapes: Map<string, Variation>,
-        attributes: Map<string, Variation>,
-        colors: Map<string, Variation>
-    } = {
-        shapes: new Map(),
-        attributes: new Map(),
-        colors: new Map()
+    abstract clear(): void
+
+    abstract load(): Promise<void>
+
+    abstract build(): Promise<void>
+
+    abstract generate(): Promise<void>
+
+    readConfig(file: string): Promise<any> {
+        return project.requestToServer('file/read-json', { path: path.join('architect', file) })
     }
 
-    groups: MaterialGroup[] = []
+    async readDataPackConfig(file: string, onRead: (data: any) => void) {
+        onRead(await project.requestToServer('file/read-json', { path: path.join('data_pack', 'architect_config', file) }))
 
-    materials: Map<string, Material> = new Map()
+        const dataPacks = await project.requestToServer('file/read-dir', { path: path.join('dependencies', 'data_packs') })
+        for(let i = 0; i < dataPacks.length; i++) {
+            onRead(await project.requestToServer('file/read-json', { path: path.join('dependencies', 'data_packs', dataPacks[i], 'architect_config', file) }))
+        } 
+    }
 
-    async load() {
-        
+    writeConfig(file: string, data: {}) {
+        return project.sendToServer('file/write-json', { path: path.join('architect', file), data: data })
+    }
+}
+
+export abstract class ProjectConfigFile extends ProjectConfig {
+
+    constructor(readonly file: string) {
+        super()
+    }
+
+    abstract loadData(data: any): void
+
+    abstract data(): {}
+
+    async load(): Promise<void> {
+        this.loadData(await this.readConfig(this.file))
+    }
+
+    async build() {        
+        await this.readDataPackConfig('materials.json', this.loadData)
+
+        this.writeConfig('materials.json', this.data())
+    }
+
+    async generate() {
+        this.writeConfig(this.file, fs.readFileSync(path.join(configDir, this.file)))
     }
 }

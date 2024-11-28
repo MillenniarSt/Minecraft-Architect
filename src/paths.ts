@@ -18,6 +18,7 @@ export const dir: string = getAppDataPath.default('Beaver Architect')
 
 export const resourceDir: string = path.join(dir, 'architects\\minecraft\\resources')
 
+export const configDir: string = path.join(resourceDir, 'config')
 export const dataDir: string = path.join(resourceDir, 'data')
 export const renderDir: string = path.join(resourceDir, 'render')
 

@@ -4,6 +4,8 @@ import { RenderObject } from '../render.js'
 
 export class Location {
 
+  static readonly UNDEFINED = new Location('beaver', 'undefined')
+
   constructor(readonly mod: string, readonly id: string) { }
 
   static minecraft(id: string): Location {

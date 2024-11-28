@@ -1,7 +1,12 @@
+import fs from "fs"
+import path from "path"
 import { loader } from "../minecraft/loader.js"
 import { Location } from "../minecraft/objects/object.js"
 import { project } from "../project.js"
 import { displayName } from "../util.js"
+import { ProjectConfigFile } from "./config.js"
+import { configDir } from "../paths.js"
+import { OnMessage } from "../socket.js"
 
 export class Variation {
 
@@ -33,6 +38,8 @@ export class Variation {
 }
 
 export class Material {
+
+    static readonly UNDEFINED = new Material(Location.UNDEFINED, Location.UNDEFINED, Location.UNDEFINED, 'Undefined')
 
     constructor(
         readonly location: Location,
@@ -66,7 +73,7 @@ export class MaterialGroup {
     ) { }
 
     static fromJson(json: any): MaterialGroup {
-        return new MaterialGroup(json.name, Location.fromJson(json.icon), json.materials.map((material: string) => project.config.materials.get(Location.fromJson(material).toString())))
+        return new MaterialGroup(json.name, Location.fromJson(json.icon), json.materials.map((material: string) => project.configs.material.materials[Location.fromJson(material).toString()] ?? Material.UNDEFINED))
     }
 
     toJson(): {} {
@@ -76,4 +83,63 @@ export class MaterialGroup {
             materials: this.materials.map((material) => material.location.toJson())
         }
     }
+}
+
+export class MaterialConfig extends ProjectConfigFile {
+
+    variations: {
+        shapes: Record<string, Variation>,
+        attributes: Record<string, Variation>,
+        colors: Record<string, Variation>
+    } = {
+        shapes: {},
+        attributes: {},
+        colors: {}
+    }
+    materials: Record<string, Material> = {}
+
+    groups: MaterialGroup[] = []
+
+    default: Material = Material.UNDEFINED
+
+    clear() {
+        this.variations = {
+            shapes: {},
+            attributes: {},
+            colors: {}
+        }
+        this.materials = {}
+        this.groups = []
+        this.default = Material.UNDEFINED
+    }
+
+    loadData(data: any) {
+        this.variations = {
+            shapes: Object.fromEntries(Object.entries(data.variations.shapes).map((entry) => [entry[0], Variation.fromJson(entry[1])])),
+            attributes: Object.fromEntries(Object.entries(data.variations.attributes).map((entry) => [entry[0], Variation.fromJson(entry[1])])),
+            colors: Object.fromEntries(Object.entries(data.variations.colors).map((entry) => [entry[0], Variation.fromJson(entry[1])]))
+        }
+        this.materials = Object.fromEntries(data.materials.map((material: any) => [Location.fromJson(material.location).toString(), Material.fromJson(material)]))
+        this.groups = data.groups.map((group: any) => MaterialGroup.fromJson(group))
+        this.default = this.materials[Location.fromJson(data.default).toString()] ?? Material.UNDEFINED
+    }
+
+    data(): {} {
+        return {
+            default: this.default.location.toString(),
+            variations: {
+                shapes: Object.fromEntries(Object.entries(this.variations.shapes).map((entry) => [entry[0], entry[1].toJson()])),
+                attributes: Object.fromEntries(Object.entries(this.variations.attributes).map((entry) => [entry[0], entry[1].toJson()])),
+                colors: Object.fromEntries(Object.entries(this.variations.colors).map((entry) => [entry[0], entry[1].toJson()]))
+            },
+            materials: Object.entries(this.variations.colors).map((entry) => entry[1].toJson()),
+            groups: this.groups.map((group: any) => group.toJson())
+        }
+    }
+}
+
+export function registerMaterialMessages(messages: OnMessage) {
+    const config = project.configs.material
+
+    messages.set('data-pack/materials/default', (data, ws) => ws.respond({ id: config.default.location.toString() }))
 }

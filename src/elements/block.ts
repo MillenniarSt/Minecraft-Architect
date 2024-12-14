@@ -1,8 +1,7 @@
 import { v4 } from "uuid"
 import { displayName, FormDataInput, FormDataOutput } from "../util.js"
 import { Dimension3D, Pos3D, Size3D } from "../world/world3D.js"
-import { Location } from "../minecraft/objects/object.js"
-import { loader } from "../minecraft/loader.js"
+import { loader, Location } from "../minecraft/loader.js"
 import { BuilderElement, BuilderElementNode, EditGraph, BuilderElementUpdateData, ElementView } from "./elements.js"
 import { Block } from "../minecraft/objects/block.js"
 

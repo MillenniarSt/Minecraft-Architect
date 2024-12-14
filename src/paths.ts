@@ -13,6 +13,7 @@
 
 import getAppDataPath from 'appdata-path'
 import path from 'path'
+import { loader, Location } from './minecraft/loader.js'
 
 export const dir: string = getAppDataPath.default('Beaver Architect')
 
@@ -23,3 +24,7 @@ export const dataDir: string = path.join(resourceDir, 'data')
 export const renderDir: string = path.join(resourceDir, 'render')
 
 export const minecraftDir = getAppDataPath.default('.minecraft')
+
+export function iconPath(location: Location): string {
+    return path.join(resourceDir, 'render', loader.version, 'icons', `${location.toDir()}.png`)
+}

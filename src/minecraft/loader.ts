@@ -1,7 +1,6 @@
 import fs from 'fs-extra'
 import { Item } from "./objects/item.js"
 import AdmZip from "adm-zip"
-import { Location } from "./objects/object.js"
 import path from "path"
 import getAppDataPath from 'appdata-path'
 import { Block } from "./objects/block.js"
@@ -49,7 +48,7 @@ export class MinecraftLoader {
     this.blocks = new Map()
     this.items = new Map()
 
-    const savedNames = new Map<Location, string>()
+    const savedNames = new Map<string, string>()
 
     console.log(`Parsing lang: ${this.language}`)
     this.archive.getEntries().forEach(file => {
@@ -64,7 +63,7 @@ export class MinecraftLoader {
 
             if (args.length === 3) {
               if (args[0] === 'block') {
-                savedNames.set(new Location(args[1], args[2]), lang[key])
+                savedNames.set(new Location(args[1], args[2]).toString(), lang[key])
               } else if (args[0] === 'item') {
                 const location = new Location(args[1], args[2])
                 const json = this.resourceJson('models/item', location)
@@ -89,7 +88,7 @@ export class MinecraftLoader {
           const location = new Location(dirs[1], dirs[3].substring(0, dirs[3].lastIndexOf('.')))
           const json = this.resourceJson('blockstates', location)
           if(json) {
-            const block = Block.resource(location, savedNames.get(location) ?? 'Block', json)
+            const block = Block.resource(location, savedNames.get(location.toString()) ?? 'Block', json)
             block.save()
             this.blocks.set(location.toString(), block)
           }
@@ -133,6 +132,40 @@ export class MinecraftLoader {
 
   get renderDir(): string {
     return path.join(renderDir, this.version)
+  }
+}
+
+export class Location {
+
+  static readonly UNDEFINED = new Location('beaver', 'undefined')
+
+  constructor(readonly mod: string, readonly id: string) { }
+
+  static minecraft(id: string): Location {
+    return new Location('minecraft', id)
+  }
+
+  static fromJson(json: string): Location {
+    return new Location(
+      json.includes(':') ? json.substring(0, json.indexOf(':')) : 'minecraft',
+      json.includes(':') ? json.substring(json.indexOf(':') + 1) : json
+    )
+  }
+
+  toJson(): string {
+    return `${this.mod}:${this.id}`
+  }
+
+  equals(other: Location): boolean {
+    return this.mod == other.mod && this.id == other.id
+  }
+
+  toString(): string {
+    return this.toJson()
+  }
+
+  toDir(): string {
+    return `${this.mod}/${this.id}`
   }
 }
 

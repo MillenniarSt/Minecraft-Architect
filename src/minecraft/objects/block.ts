@@ -1,7 +1,7 @@
 import { Rotation3D } from '../../world/world3D.js'
-import { Location, MinecraftObject } from './object.js'
+import { MinecraftObject } from './object.js'
 import { Item } from './item.js'
-import { loader } from '../loader.js'
+import { loader, Location } from '../loader.js'
 import { Cube, RenderObject } from '../render.js'
 import path from 'path'
 

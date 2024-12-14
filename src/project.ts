@@ -1,6 +1,5 @@
 import { WebSocketServer, WebSocket } from "ws";
-import { ProjectConfig } from "./config/config.js";
-import { OnMessage, openSocketServer, WebSocketMessage, WebSocketResponse } from "./socket.js";
+import { ArchitectServer, OnMessage } from "./socket.js";
 import chalk from "chalk";
 import { v4 } from "uuid";
 import { MaterialConfig } from "./config/material.js";
@@ -21,19 +20,14 @@ export class Project {
         material: new MaterialConfig('materials.json')
     }
 
-    private readonly server: WebSocketServer
-    private beaverServer: WebSocket | undefined
+    readonly server: ArchitectServer
 
     constructor(
         identifier: string,
         port: number
     ) {
         this.identifier = identifier
-        this.server = new WebSocketServer({ port })
-    }
-
-    open(socketMessages: OnMessage) {
-        openSocketServer(this.server, socketMessages, this.onResponse, (ws) => this.beaverServer = ws)
+        this.server = new ArchitectServer(port)
     }
 
     async generateConfigs() {
@@ -56,38 +50,6 @@ export class Project {
         for(let i = 0; i < entries.length; i++) {
             entries[i][1].clear()
             await entries[i][1].build()
-        }
-    }
-
-    sendToServer(path: string, data?: {}) {
-        this.messageToServer({path: path, data: data ?? {}})
-    }
-
-    requestToServer(path: string, data?: {}): Promise<any> {
-        return new Promise((resolve) => {
-            const id = v4()
-            this.waitingRequests.set(id, resolve)
-            this.messageToServer({path: path, data: data ?? {}, id: id})
-        })
-    }
-
-    messageToServer(message: WebSocketMessage) {
-        if(this.beaverServer) {
-            this.beaverServer.send(JSON.stringify(message))
-        } else {
-            console.log(chalk.redBright('[ Socket ] |  SEND  | ERR | Cannot send data: Beaver Architect Server is not yet connected'))
-        }
-    }
-
-    waitingRequests: Map<string, (data: any) => void> = new Map()
-
-    private onResponse(res: WebSocketResponse) {
-        const f = this.waitingRequests.get(res.id)
-        if(f) {
-            f(res.data)
-            this.waitingRequests.delete(res.id)
-        } else {
-            console.log(chalk.redBright(`[ Socket ] |  GET   | ERR | Invalid Response ID: ${res.id}`))
         }
     }
 }

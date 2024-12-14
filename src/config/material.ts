@@ -1,12 +1,9 @@
-import fs from "fs"
-import path from "path"
-import { loader } from "../minecraft/loader.js"
-import { Location } from "../minecraft/objects/object.js"
+import { loader, Location } from "../minecraft/loader.js"
 import { project } from "../project.js"
 import { displayName } from "../util.js"
 import { ProjectConfigFile } from "./config.js"
-import { configDir } from "../paths.js"
 import { OnMessage } from "../socket.js"
+import { iconPath } from "../paths.js"
 
 export class Variation {
 
@@ -51,7 +48,12 @@ export class Material {
 
     static fromJson(json: any): Material {
         const location = Location.fromJson(json.location)
-        return new Material(location, Location.fromJson(json.icon) ?? location, Location.fromJson(json.base) ?? location, json.name ?? displayName(location.id))
+        return new Material(
+            location, 
+            json.icon ? Location.fromJson(json.icon) : location, 
+            json.base ? Location.fromJson(json.base) : location, 
+            json.name ?? displayName(location.id)
+        )
     }
 
     toJson(): {} {
@@ -60,6 +62,14 @@ export class Material {
             icon: this.icon.toJson(),
             base: this.base.toJson(),
             name: this.name
+        }
+    }
+
+    toClient(): {} {
+        return {
+            id: this.location.toString(),
+            label: this.name,
+            icon: iconPath(this.icon)
         }
     }
 }
@@ -142,4 +152,16 @@ export function registerMaterialMessages(messages: OnMessage) {
     const config = project.configs.material
 
     messages.set('data-pack/materials/default', (data, ws) => ws.respond({ id: config.default.location.toString() }))
+    messages.set('data-pack/materials/get', (data, ws) => {
+        ws.respond({
+            groups: config.groups.map((group) => {
+                return {
+                    label: group.name,
+                    icon: iconPath(group.icon),
+                    materials: group.materials.map((material) => material.toClient())
+                }
+            }),
+            materials: Object.entries(config.materials).map((entry) => entry[1].toClient())
+        })
+    })
 }

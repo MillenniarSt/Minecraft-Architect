@@ -1,7 +1,7 @@
 import { Cube, RenderObject, Texture } from "../render.js"
-import { Dimension3D, Pos3D, Rotation3D, Size3D } from "../../world/world3D.js"
-import { MinecraftObject, Location } from "./object.js"
-import { loader } from "../loader.js"
+import { Pos3D, Rotation3D, Size3D } from "../../world/world3D.js"
+import { MinecraftObject } from "./object.js"
+import { loader, Location } from "../loader.js"
 import path from "path"
 
 export class Item extends MinecraftObject {

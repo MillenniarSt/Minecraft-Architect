@@ -9,14 +9,10 @@ export type BuilderElementUpdateData = {
     children?: BuilderElementNode[],
     view?: ElementView,
 
-    updates?: BuilderElementUpdate[]
+    update?: BuilderElementUpdate
 }
 
 export type BuilderElementUpdate = {
-    id: string,
-    mode?: 'push' | 'delete',
-    parent?: string | null
-
     view?: ElementView,
     node?: BuilderElementNode,
     editGraph?: boolean,

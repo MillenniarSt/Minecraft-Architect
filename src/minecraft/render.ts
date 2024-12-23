@@ -26,6 +26,46 @@ export class RenderObject {
             (_, match) => `[${match.replace(/\s+/g, ' ').trim()}]`
         ))
     }
+
+    toIcon(ifVoid?: RenderObject): Buffer {
+        const icon = new PNG({ width: 16, height: 16 })
+        let isVoid = true
+
+        this.cubes.forEach((cube) => {
+            const texture = cube.faces[0]
+            if (texture) {
+                const pos = [16 - (((cube.size.height / 2) + cube.pos.y) * 16), 16 - (((cube.size.width / 2) + cube.pos.x) * 16)]
+                const resource = PNG.sync.read(fs.readFileSync(loader.renderFile('textures', texture.location, 'png')))
+
+                for (let j = 0; j < texture.uv[3] * 16; j++) {       // columns - height
+                    for (let i = 0; i < texture.uv[2] * 16; i++) {   // rows - width
+                        const column = j + pos[0]
+                        const row = i + pos[1]
+
+                        if(column >= 0 && column <= 16 && row >= 0 && row <= 16) {
+                            const idxOriginal = ((j + (texture.uv[1] * 16)) * resource.width + (texture.uv[0] * 16) + i) << 2
+                            const idxNew = (column * icon.width + row) << 2
+    
+                            if (resource.data[idxOriginal + 3] !== 0) {
+                                icon.data[idxNew] = resource.data[idxOriginal]
+                                icon.data[idxNew + 1] = resource.data[idxOriginal + 1]
+                                icon.data[idxNew + 2] = resource.data[idxOriginal + 2]
+                                icon.data[idxNew + 3] = resource.data[idxOriginal + 3]
+
+                                isVoid = false
+                            }
+                        }
+                    }
+                }
+            }
+        })
+
+        if(isVoid && ifVoid) {
+            return ifVoid.toIcon()
+        }
+
+        return PNG.sync.write(icon)
+    }
 }
 
 export function getFaceIndex(face: string): number {
@@ -173,9 +213,9 @@ export class Texture {
     }
 
     save(file: string, buffer: Buffer) {
-        const resource = PNG.sync.read(buffer);
+        const resource = PNG.sync.read(buffer)
 
-        const texture = new PNG({ width: resource.width, height: resource.width });
+        const texture = new PNG({ width: resource.width, height: resource.width })
 
         for (let j = 0; j < texture.height; j++) {
             for (let i = 0; i < texture.width; i++) {
@@ -197,9 +237,9 @@ export class Texture {
         return {
             texture: this.location.toJson(),
             uv: [
-                this.uv[0], this.uv[3], 
-                this.uv[2], this.uv[3], 
-                this.uv[0], this.uv[1], 
+                this.uv[0], this.uv[3],
+                this.uv[2], this.uv[3],
+                this.uv[0], this.uv[1],
                 this.uv[2], this.uv[1]
             ],
             color: this.color

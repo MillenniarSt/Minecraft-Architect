@@ -2,6 +2,8 @@ import fs from 'fs-extra'
 import path from 'path'
 import { RenderObject } from '../render.js'
 import { Location } from '../loader.js'
+import { iconPath, resourceDir } from '../../paths.js'
+import { PNG } from 'pngjs'
 
 export abstract class MinecraftObject {
 
@@ -10,6 +12,12 @@ export abstract class MinecraftObject {
   abstract toJson(): any
 
   abstract get path(): string
+
+  abstract defaultRender(): RenderObject
+
+  secondRender(): RenderObject | undefined {
+    return undefined
+  }
 
   equals(other: MinecraftObject): boolean {
     return this.location === other.location
@@ -22,6 +30,15 @@ export abstract class MinecraftObject {
     Object.keys(renderToSave).forEach((renderPath) => {
       this.saveInFile(renderPath, renderToSave[renderPath].toJson())
     })
+
+    const iconFile = iconPath(this.location)
+    try {
+      fs.mkdirsSync(path.dirname(iconFile))
+      fs.writeFileSync(iconFile, this.defaultRender().toIcon(this.secondRender()))
+    } catch(e) {
+      console.warn('Can not generate icon of object:', this.location.toString())
+      fs.copyFileSync(path.join(resourceDir, 'assets', 'undefined.png'), iconFile)
+    }
   }
 
   private saveInFile(file: string, json: {}) {

@@ -63,6 +63,14 @@ export class Block extends MinecraftObject {
     return block
   }
 
+  defaultRender(): RenderObject {
+    return this.blockstates[0].models[0].render
+  }
+
+  secondRender(): RenderObject | undefined {
+    return this.item?.defaultRender()
+  }
+
   model(conditions: Condition | Record<string, string>): [number, number][] {
     let indexes: [number, number][] = []
 

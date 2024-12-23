@@ -36,22 +36,25 @@ export class Variation {
 
 export class Material {
 
-    static readonly UNDEFINED = new Material(Location.UNDEFINED, Location.UNDEFINED, Location.UNDEFINED, 'Undefined')
+    static readonly UNDEFINED = new Material(Location.UNDEFINED, Location.UNDEFINED, Location.UNDEFINED, Location.UNDEFINED, 'Undefined')
 
     constructor(
         readonly location: Location,
 
-        readonly icon: Location,
-        readonly base: Location,
-        readonly name: string
+        readonly base: Location = location,
+        readonly icon: Location = base,
+        readonly preview: Location = base,
+        readonly name: string = displayName(location.id)
     ) { }
 
     static fromJson(json: any): Material {
         const location = Location.fromJson(json.location)
+        const base = json.base ? Location.fromJson(json.base) : location
         return new Material(
             location, 
-            json.icon ? Location.fromJson(json.icon) : location, 
-            json.base ? Location.fromJson(json.base) : location, 
+            base, 
+            json.icon ? Location.fromJson(json.icon) : base, 
+            json.preview ? Location.fromJson(json.preview) : new Location(base.mod, `block\\${base.id}`), 
             json.name ?? displayName(location.id)
         )
     }
@@ -129,7 +132,12 @@ export class MaterialConfig extends ProjectConfigFile {
             attributes: Object.fromEntries(Object.entries(data.variations.attributes).map((entry) => [entry[0], Variation.fromJson(entry[1])])),
             colors: Object.fromEntries(Object.entries(data.variations.colors).map((entry) => [entry[0], Variation.fromJson(entry[1])]))
         }
-        this.materials = Object.fromEntries(data.materials.map((material: any) => [Location.fromJson(material.location).toString(), Material.fromJson(material)]))
+        const blockMaterials: [string, Material][] = []
+        loader.blocks.forEach((block, key) => blockMaterials.push([key, new Material(block.location)]))
+        this.materials = Object.fromEntries([
+            ...data.materials.map((material: any) => [Location.fromJson(material.location).toString(), Material.fromJson(material)]),
+            ...blockMaterials
+        ])
         this.groups = data.groups.map((group: any) => MaterialGroup.fromJson(group))
         this.default = this.materials[Location.fromJson(data.default).toString()] ?? Material.UNDEFINED
     }
@@ -163,5 +171,8 @@ export function registerMaterialMessages(messages: OnMessage) {
             }),
             materials: Object.entries(config.materials).map((entry) => entry[1].toClient())
         })
+    })
+    messages.set('data-pack/materials/textures', (data, ws) => {
+        ws.respond(data.materials.map((row: any[]) => row.map((material: string) => iconPath(config.materials[material].icon))))
     })
 }

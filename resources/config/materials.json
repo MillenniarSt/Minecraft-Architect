@@ -52,6 +52,6 @@
     {"location": "dark_oak", "base": "dark_oak_planks" },
     {"location": "acacia", "base": "acacia_planks" },
 
-    {"location": "stone_brick", "base": "stone_bricks", "name": "Stone bricks" }
+    {"location": "stone_brick", "base": "stone_bricks", "name": "Stone Bricks" }
   ]
 }

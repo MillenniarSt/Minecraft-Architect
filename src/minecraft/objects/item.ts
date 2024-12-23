@@ -28,6 +28,10 @@ export class Item extends MinecraftObject {
     }
   }
 
+  defaultRender(): RenderObject {
+    return this.model.render
+  }
+
   get path(): string {
     return loader.dataFile("item", this.location, "json")
   }

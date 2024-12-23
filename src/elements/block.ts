@@ -29,12 +29,11 @@ export class BlockElement extends BuilderElement {
         return {
             dimension: { pos: this.position.toJSON(), size: [1, 1, 1] },
             view: this.view(),
-            updates: [{
-                id: this.id,
+            update: {
                 view: this.view(),
                 form: true,
                 editGraph: true
-            }]
+            }
         }
     }
 
@@ -129,12 +128,11 @@ export class BlockElement extends BuilderElement {
             view: this.view(),
             label: this.node().label,
             dimension: this.getDimension().toJSON(),
-            updates: [{
-                id: this.id,
+            update: {
                 view: this.view(),
                 form: updateForm,
                 editGraph: updateGraph
-            }]
+            }
         }
     }
 

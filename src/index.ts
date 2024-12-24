@@ -7,27 +7,27 @@ import { registerMaterialMessages } from './config/material.js'
 
 const log = console.log
 console.log = (...args) => {
-    log('\x1b[90m[     Server     ]', ...args, '\x1b[0m')
+    log('\x1b[90m[   Minecraft    ]', ...args, '\x1b[0m')
 }
 
 const info = console.info
 console.info = (...args) => {
-    info('[     Server     ] ', ...args)
+    info('[   Minecraft    ]', ...args)
 }
 
 const warn = console.warn
 console.warn = (...args) => {
-    warn('\x1b[33m[     Server     ] | WARN |', ...args, '\x1b[0m')
+    warn('\x1b[33m[   Minecraft    ] | WARN |', ...args, '\x1b[0m')
 }
 
 const error = console.error
 console.error = (...args) => {
-    error('\x1b[31m[     Server     ] | ERROR |', ...args, '\x1b[0m')
+    error('\x1b[31m[   Minecraft    ] | ERROR |', ...args, '\x1b[0m')
 }
 
 const debug = console.debug
 console.debug = (...args) => {
-    debug('[     Server     ] | DEBUG |', ...args)
+    debug('[   Minecraft    ] | DEBUG |', ...args)
 }
 
 console.log('Minecraft Starting, waiting for server data...')

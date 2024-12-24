@@ -1,7 +1,4 @@
-import { WebSocketServer, WebSocket } from "ws";
-import { ArchitectServer, OnMessage } from "./socket.js";
-import chalk from "chalk";
-import { v4 } from "uuid";
+import { ArchitectServer } from "./socket.js";
 import { MaterialConfig } from "./config/material.js";
 
 export let project: Project

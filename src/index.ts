@@ -4,31 +4,30 @@ import { registerRenderMessages } from './minecraft/messages.js'
 import { registerElementsMessages } from './elements/messages.js'
 import { project, Project, setProject } from './project.js'
 import { registerMaterialMessages } from './config/material.js'
-import chalk from 'chalk'
 
 const log = console.log
 console.log = (...args) => {
-    log(chalk.gray('[   Minecraft    ]', ...args))
+    log('\x1b[90m[     Server     ]', ...args, '\x1b[0m')
 }
 
 const info = console.info
 console.info = (...args) => {
-    info('[   Minecraft    ] ', ...args)
+    info('[     Server     ] ', ...args)
 }
 
 const warn = console.warn
 console.warn = (...args) => {
-    warn(chalk.yellow('[   Minecraft    ] | WARN |', ...args))
+    warn('\x1b[33m[     Server     ] | WARN |', ...args, '\x1b[0m')
 }
 
 const error = console.error
 console.error = (...args) => {
-    error(chalk.red('[   Minecraft    ] | ERROR |', ...args))
+    error('\x1b[31m[     Server     ] | ERROR |', ...args, '\x1b[0m')
 }
 
 const debug = console.debug
 console.debug = (...args) => {
-    debug('[   Minecraft    ] | DEBUG |', ...args)
+    debug('[     Server     ] | DEBUG |', ...args)
 }
 
 console.log('Minecraft Starting, waiting for server data...')

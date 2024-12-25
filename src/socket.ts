@@ -40,13 +40,25 @@ export class ArchitectServer {
 
     private waitingRequests: Map<string, (data: any) => void> = new Map()
 
-    constructor( readonly port: number ) { }
+    private serverIsRemote: boolean = false
+
+    constructor(readonly port: number) { }
 
     open(onMessage: OnMessage) {
         onMessage.set('define', (data, ws) => {
-            switch(data.side) {
-                case 'server': this._server = ws.webSocket; break
-                case 'client': this._client = ws.webSocket; break
+            switch (data.side) {
+                case 'server':
+                    if(data.isRemote) {
+                        this.serverIsRemote = true
+                        this._server = this._client
+                    } else {
+                        this.serverIsRemote = false
+                        this._server = ws.webSocket
+                    }
+                    break
+                case 'client':
+                    this._client = ws.webSocket
+                    break
                 default: console.log(`Invalid WebSocket side: ${data.side}`); ws.respond({}); return
             }
             console.log(`Defined connection to Beaver ${data.side} side`)
@@ -99,6 +111,10 @@ export class ArchitectServer {
                     respond(null, {}, toSocketError(error))
                 }
             })
+
+            ws.on('error', (err) => {
+                console.error('[ Socket ] |  MAIN  | ERR |', err)
+            })
         })
     }
 
@@ -107,7 +123,11 @@ export class ArchitectServer {
     }
 
     sendToServer(path: string, data?: {}) {
-        this.server.send(JSON.stringify({ path, data: data ?? {} }))
+        if(this.serverIsRemote) {
+            this.server.send(JSON.stringify({ path: 'sever/send', data: { path, data: data ?? {} }}))
+        } else {
+            this.server.send(JSON.stringify({ path, data: data ?? {} }))
+        }
     }
 
     requestToClient(path: string, data?: {}): Promise<any> {
@@ -122,7 +142,11 @@ export class ArchitectServer {
         return new Promise((resolve) => {
             const id = v4()
             this.waitingRequests.set(id, resolve)
-            this.server.send(JSON.stringify({ path: path, id: id, data: data ?? {} }))
+            if(this.serverIsRemote) {
+                this.server.send(JSON.stringify({ path: 'sever/request', data: { path: path, id: id, data: data ?? {} }}))
+            } else {
+                this.server.send(JSON.stringify({ path: path, id: id, data: data ?? {} }))
+            }
         })
     }
 

@@ -1,10 +1,22 @@
+//             _____
+//         ___/     \___        |  |
+//      ##/  _.- _.-    \##  -  |  |                       -
+//      ##\#=_  '    _=#/##  |  |  |  /---\  |      |      |   ===\  |  __
+//      ##   \\#####//   ##  |  |  |  |___/  |===\  |===\  |   ___|  |==/
+//      ##       |       ##  |  |  |  |      |   |  |   |  |  /   |  |
+//      ##       |       ##  |  \= \= \====  |   |  |   |  |  \___/  |
+//      ##\___   |   ___/
+//      ##    \__|__/
+//
+
 import { Cube, RenderObject, Texture } from "../render.js"
-import { Pos3D, Rotation3D, Size3D } from "../../world/world3D.js"
-import { MinecraftObject } from "./object.js"
+import { Registry } from "./registry.js"
 import { loader, Location } from "../loader.js"
 import path from "path"
+import { Vec3 } from "../../world/vector.js"
+import { Quaternion } from "../../world/quaternion.js"
 
-export class Item extends MinecraftObject {
+export class Item extends Registry {
 
   model: ItemModel
 
@@ -82,8 +94,8 @@ export class ItemModel {
           .filter(layer => layer.indexOf('layer') === 0)
           .map(layer => {
             const cube = new Cube(
-              new Pos3D(0.5, 0, 0.5),
-              new Size3D(1, 0, 1)
+              new Vec3(0.5, 0.5, 0),
+              new Vec3(1, 1, 1)
             )
             const location = Location.fromJson(textures[layer].replace('/', '\\'))
             const texture = new Texture(location)
@@ -98,8 +110,8 @@ export class ItemModel {
           .filter(layer => layer.indexOf('layer') === 0)
           .map(layer => {
             const cube = new Cube(
-              new Pos3D(0.5, 0, 0.5),
-              new Size3D(1, 0, 1)
+              new Vec3(0.5, 0.5, 0),
+              new Vec3(1, 1, 1)
             )
             const location = Location.fromJson(textures[layer].replace('/', '\\'))
             const texture = new Texture(location)
@@ -128,7 +140,7 @@ export class ItemModel {
 
 export class DisplayConfig {
 
-  constructor(readonly rotation: Rotation3D, readonly translation: Pos3D, readonly scale: Size3D) { }
+  constructor(readonly rotation: Quaternion, readonly translation: Vec3, readonly scale: Vec3) { }
 
   static fromJson(json: Record<string, any>): DisplayConfig {
     return new DisplayConfig(
@@ -150,13 +162,13 @@ export class DisplayConfig {
 export class Display {
 
   static readonly itemGenerated = new Display(
-    new DisplayConfig(Rotation3D.north(), new Pos3D(0, 0, 0), new Size3D(1, 1, 1)),
-    new DisplayConfig(Rotation3D.south(), new Pos3D(0, 0, 0), new Size3D(1, 1, 1))
+    new DisplayConfig(Quaternion.NORTH, Vec3.ZERO, Vec3.UNIT),
+    new DisplayConfig(Quaternion.SOUTH, Vec3.ZERO, Vec3.UNIT)
   )
 
   static readonly itemHandheld = new Display(
-    new DisplayConfig(Rotation3D.north(), new Pos3D(0, 0, 0), new Size3D(1, 1, 1)),
-    new DisplayConfig(Rotation3D.south(), new Pos3D(0, 0, 0), new Size3D(1, 1, 1))
+    new DisplayConfig(Quaternion.NORTH, Vec3.ZERO, Vec3.UNIT),
+    new DisplayConfig(Quaternion.SOUTH, Vec3.ZERO, Vec3.UNIT)
   )
 
   constructor(public gui?: DisplayConfig, public fixed?: DisplayConfig) { }

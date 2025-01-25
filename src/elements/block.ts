@@ -1,9 +1,20 @@
+//             _____
+//         ___/     \___        |  |
+//      ##/  _.- _.-    \##  -  |  |                       -
+//      ##\#=_  '    _=#/##  |  |  |  /---\  |      |      |   ===\  |  __
+//      ##   \\#####//   ##  |  |  |  |___/  |===\  |===\  |   ___|  |==/
+//      ##       |       ##  |  |  |  |      |   |  |   |  |  /   |  |
+//      ##       |       ##  |  \= \= \====  |   |  |   |  |  \___/  |
+//      ##\___   |   ___/
+//      ##    \__|__/
+//
+
 import { v4 } from "uuid"
 import { displayName, FormDataInput, FormDataOutput } from "../util.js"
 import { Dimension3D, Pos3D, Size3D } from "../world/world3D.js"
 import { loader, Location } from "../minecraft/loader.js"
 import { BuilderElement, BuilderElementNode, EditGraph, BuilderElementUpdateData, ElementView } from "./elements.js"
-import { Block } from "../minecraft/objects/block.js"
+import { BlockType } from "../minecraft/register/block.js"
 
 export class BlockElement extends BuilderElement {
 
@@ -136,8 +147,8 @@ export class BlockElement extends BuilderElement {
         }
     }
 
-    get block(): Block {
-        let block: Block | undefined
+    get block(): BlockType {
+        let block: BlockType | undefined
         if (this.location) {
             block = loader.blocks.get(this.location.toString())
         }

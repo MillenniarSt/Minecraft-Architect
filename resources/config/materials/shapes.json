@@ -1,0 +1,14 @@
+[
+    { "id": "block" },
+    { "id": "slab" },
+    { "id": "stairs" },
+    { "id": "wall" },
+    { "id": "fence" },
+    { "id": "fence_gate" },
+    { "id": "door" },
+    { "id": "trapdoor" },
+    { "id": "pressure_plate" },
+    { "id": "sign" },
+    { "id": "hanging_sign" },
+    { "id": "pane" }
+]

@@ -1,0 +1,49 @@
+{
+  "shapes": {
+    "slab": ["#_slab"],
+    "stairs": ["#_stairs"],
+    "wall": ["#_wall", "#_fence"],
+    "fence": ["#_fence", "#_wall"],
+    "fence_gate": ["#_fence_gate", "#_fence", "#_wall"],
+    "door": ["#_door"],
+    "trapdoor": ["#_trapdoor"],
+    "pressure_plate": ["#_pressure_plate", null],
+    "button": ["#_button", null],
+    "sign": ["#_sign", "#_hanging_sign", null],
+    "hanging_sign": ["#_hanging_sign", "#_sign", null],
+    "log": ["#_log", "#_wood"],
+    "wood": ["#_wood", "#_log"],
+    "pane": ["#_pane"],
+    "chiseled": ["chiseled_#"],
+    "pillar": ["#_pillar"]
+  },
+  "attributes": {
+    "processed": ["polished_#", "smooth_#", "tiles_#", "cut_#"],
+
+    "polished": ["polished_#"],
+    "smooth": ["smooth_#"],
+    "tiles": ["tiles_#"],
+    "cut": ["cut_#"],
+    "mossy": ["mossy_#"],
+    "cracked": ["cracked_#"],
+    "infested": ["infested_#"]
+  },
+  "colors": {
+    "white": ["white_#"],
+    "light_gray": ["light_gray_#"],
+    "gray": ["gray_#"],
+    "black": ["black_#"],
+    "brown": ["brown_#"],
+    "red": ["red_#"],
+    "orange": ["orange_#"],
+    "yellow": ["yellow_#"],
+    "lime": ["lime_#"],
+    "green": ["green_#"],
+    "chain": ["chain_#"],
+    "light_blue": ["light_blue_#"],
+    "blue": ["blue_#"],
+    "purple": ["purple_#"],
+    "magenta": ["magenta_#"],
+    "pink": ["pink_#"]
+  }
+}

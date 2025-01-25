@@ -1,7 +1,0 @@
-{
-    "render": {
-        "block": [
-            { "contains": "_slab", "states": { "type": "bottom" } }
-        ]
-    }
-}

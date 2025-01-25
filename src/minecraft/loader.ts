@@ -1,9 +1,20 @@
+//             _____
+//         ___/     \___        |  |
+//      ##/  _.- _.-    \##  -  |  |                       -
+//      ##\#=_  '    _=#/##  |  |  |  /---\  |      |      |   ===\  |  __
+//      ##   \\#####//   ##  |  |  |  |___/  |===\  |===\  |   ___|  |==/
+//      ##       |       ##  |  |  |  |      |   |  |   |  |  /   |  |
+//      ##       |       ##  |  \= \= \====  |   |  |   |  |  \___/  |
+//      ##\___   |   ___/
+//      ##    \__|__/
+//
+
 import fs from 'fs-extra'
-import { Item } from "./objects/item.js"
+import { Item } from "./register/item.js"
 import AdmZip from "adm-zip"
 import path from "path"
 import getAppDataPath from 'appdata-path'
-import { Block } from "./objects/block.js"
+import { BlockType } from "./register/block.js"
 import { dataDir, minecraftDir, renderDir } from "../paths.js"
 
 export class MinecraftLoader {
@@ -13,7 +24,7 @@ export class MinecraftLoader {
 
   language: string
 
-  blocks: Map<string, Block> = new Map()
+  blocks: Map<string, BlockType> = new Map()
   items: Map<string, Item> = new Map()
 
   constructor(version: string, language?: string) {
@@ -34,7 +45,7 @@ export class MinecraftLoader {
       fs.readdirSync(this.dataDir).forEach((pack) => {
         fs.readdirSync(path.join(this.dataDir, pack, 'block')).forEach((block) => {
           const location = new Location(pack, block.substring(0, block.lastIndexOf('.')))
-          this.blocks.set(location.toString(), Block.fromJson(location, JSON.parse(fs.readFileSync(path.join(this.dataDir, pack, 'block', block), 'utf8'))))
+          this.blocks.set(location.toString(), BlockType.fromJson(location, JSON.parse(fs.readFileSync(path.join(this.dataDir, pack, 'block', block), 'utf8'))))
         })
       })
 
@@ -88,7 +99,7 @@ export class MinecraftLoader {
           const location = new Location(dirs[1], dirs[3].substring(0, dirs[3].lastIndexOf('.')))
           const json = this.resourceJson('blockstates', location)
           if(json) {
-            const block = Block.resource(location, savedNames.get(location.toString()) ?? 'Block', json)
+            const block = BlockType.resource(location, savedNames.get(location.toString()) ?? 'Block', json)
             block.save()
             this.blocks.set(location.toString(), block)
           }

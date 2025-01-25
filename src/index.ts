@@ -1,3 +1,14 @@
+//             _____
+//         ___/     \___        |  |
+//      ##/  _.- _.-    \##  -  |  |                       -
+//      ##\#=_  '    _=#/##  |  |  |  /---\  |      |      |   ===\  |  __
+//      ##   \\#####//   ##  |  |  |  |___/  |===\  |===\  |   ___|  |==/
+//      ##       |       ##  |  |  |  |      |   |  |   |  |  /   |  |
+//      ##       |       ##  |  \= \= \====  |   |  |   |  |  \___/  |
+//      ##\___   |   ___/
+//      ##    \__|__/
+//
+
 import { OnMessage } from './socket.js'
 import { loader } from './minecraft/loader.js'
 import { registerRenderMessages } from './minecraft/messages.js'
@@ -36,9 +47,12 @@ process.on('message', async (message) => {
     const data = JSON.parse(message as string)
 
     const socketMessages: OnMessage = new Map([
-        ['open-project', async (data, ws) => {
+        ['load/configs', async (data, ws) => {
             loader.load()
             await project.loadConfigs()
+            ws.respond({})
+        }],
+        ['load/project', async (data, ws) => {
             ws.respond({})
         }]
     ])

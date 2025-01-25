@@ -1,3 +1,14 @@
+//             _____
+//         ___/     \___        |  |
+//      ##/  _.- _.-    \##  -  |  |                       -
+//      ##\#=_  '    _=#/##  |  |  |  /---\  |      |      |   ===\  |  __
+//      ##   \\#####//   ##  |  |  |  |___/  |===\  |===\  |   ___|  |==/
+//      ##       |       ##  |  |  |  |      |   |  |   |  |  /   |  |
+//      ##       |       ##  |  \= \= \====  |   |  |   |  |  \___/  |
+//      ##\___   |   ___/
+//      ##    \__|__/
+//
+
 import fs from "fs-extra"
 import path from "path"
 import { Pos3D, Rotation3D, Size3D } from "../world/world3D.js"
@@ -32,39 +43,59 @@ export class RenderObject {
         let isVoid = true
 
         this.cubes.forEach((cube) => {
-            const texture = cube.faces[0]
-            if (texture) {
-                const pos = [16 - (((cube.size.height / 2) + cube.pos.y) * 16), 16 - (((cube.size.width / 2) + cube.pos.x) * 16)]
-                const resource = PNG.sync.read(fs.readFileSync(loader.renderFile('textures', texture.location, 'png')))
-
-                for (let j = 0; j < texture.uv[3] * 16; j++) {       // columns - height
-                    for (let i = 0; i < texture.uv[2] * 16; i++) {   // rows - width
-                        const column = j + pos[0]
-                        const row = i + pos[1]
-
-                        if(column >= 0 && column <= 16 && row >= 0 && row <= 16) {
-                            const idxOriginal = ((j + (texture.uv[1] * 16)) * resource.width + (texture.uv[0] * 16) + i) << 2
-                            const idxNew = (column * icon.width + row) << 2
-    
-                            if (resource.data[idxOriginal + 3] !== 0) {
-                                icon.data[idxNew] = resource.data[idxOriginal]
-                                icon.data[idxNew + 1] = resource.data[idxOriginal + 1]
-                                icon.data[idxNew + 2] = resource.data[idxOriginal + 2]
-                                icon.data[idxNew + 3] = resource.data[idxOriginal + 3]
-
-                                isVoid = false
-                            }
-                        }
-                    }
+            let textureVoid = true
+            if (cube.rotation.y === 0) {
+                let texture = cube.faces[0]
+                if (texture) {
+                    const pos: [number, number] = [16 - (((cube.size.height / 2) + cube.pos.y) * 16), 16 - (((cube.size.width / 2) + cube.pos.x) * 16)]
+                    textureVoid = this.writeIconTexture(texture, icon, pos)
                 }
+            } else {
+                const texture = cube.faces[5]
+                if (texture) {
+                    const pos: [number, number] = [16 - (((cube.size.height / 2) + cube.pos.y) * 16), 16 - (((cube.size.length / 2) + cube.pos.z) * 16)]
+                    textureVoid = this.writeIconTexture(texture, icon, pos)
+                }
+            }
+            if(textureVoid = false) {
+                isVoid = false
             }
         })
 
-        if(isVoid && ifVoid) {
+        if (isVoid && ifVoid) {
             return ifVoid.toIcon()
         }
 
         return PNG.sync.write(icon)
+    }
+
+    writeIconTexture(texture: Texture, icon: PNG, pos: [number, number]): boolean {
+        let isVoid = true
+
+        const resource = PNG.sync.read(fs.readFileSync(loader.renderFile('textures', texture.location, 'png')))
+
+        for (let j = 0; j < texture.uv[3] * 16; j++) {       // columns - height
+            for (let i = 0; i < texture.uv[2] * 16; i++) {   // rows - width
+                const column = j + pos[0]
+                const row = i + pos[1]
+
+                if (column >= 0 && column <= 16 && row >= 0 && row <= 16) {
+                    const idxOriginal = ((j + (texture.uv[1] * 16)) * resource.width + (texture.uv[0] * 16) + i) << 2
+                    const idxNew = (column * icon.width + row) << 2
+
+                    if (resource.data[idxOriginal + 3] !== 0) {
+                        icon.data[idxNew] = resource.data[idxOriginal]
+                        icon.data[idxNew + 1] = resource.data[idxOriginal + 1]
+                        icon.data[idxNew + 2] = resource.data[idxOriginal + 2]
+                        icon.data[idxNew + 3] = resource.data[idxOriginal + 3]
+
+                        isVoid = false
+                    }
+                }
+            }
+        }
+
+        return isVoid
     }
 }
 

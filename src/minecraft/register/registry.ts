@@ -1,11 +1,21 @@
+//             _____
+//         ___/     \___        |  |
+//      ##/  _.- _.-    \##  -  |  |                       -
+//      ##\#=_  '    _=#/##  |  |  |  /---\  |      |      |   ===\  |  __
+//      ##   \\#####//   ##  |  |  |  |___/  |===\  |===\  |   ___|  |==/
+//      ##       |       ##  |  |  |  |      |   |  |   |  |  /   |  |
+//      ##       |       ##  |  \= \= \====  |   |  |   |  |  \___/  |
+//      ##\___   |   ___/
+//      ##    \__|__/
+//
+
 import fs from 'fs-extra'
 import path from 'path'
 import { RenderObject } from '../render.js'
 import { Location } from '../loader.js'
 import { iconPath, resourceDir } from '../../paths.js'
-import { PNG } from 'pngjs'
 
-export abstract class MinecraftObject {
+export abstract class Registry {
 
   constructor(readonly location: Location, readonly name: string) { }
 
@@ -19,7 +29,7 @@ export abstract class MinecraftObject {
     return undefined
   }
 
-  equals(other: MinecraftObject): boolean {
+  equals(other: Registry): boolean {
     return this.location === other.location
   }
 

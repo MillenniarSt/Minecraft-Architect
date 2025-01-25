@@ -1,0 +1,24 @@
+[
+  {
+    "identifier": "oak_planks",
+    "label": "Oak Planks",
+    "shapes": [
+      { "id": "minecraft:oak_planks", "shape": "block" },
+      { "id": "minecraft:oak_slab", "shape": "slab" },
+      { "id": "minecraft:oak_fence", "shape": "fence" },
+      { "id": "minecraft:oak_fence_gate", "shape": "fence_gate" },
+      { "id": "minecraft:oak_trap_door", "shape": "trap_door" }
+    ]
+  },
+  {
+    "identifier": "oak_log",
+    "label": "Oak Log",
+    "shapes": [
+      { "id": "minecraft:oak_log", "shape": "block" }
+    ],
+    "attributes": [
+      { "id": "wood", "label": "Wood", "var": "#_wood" },
+      { "id": "stripped", "label": "Stripped", "var": "stripped_#" }
+    ]
+  }
+]

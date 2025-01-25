@@ -1,11 +1,23 @@
-import { Rotation3D } from '../../world/world3D.js'
-import { MinecraftObject } from './object.js'
+//             _____
+//         ___/     \___        |  |
+//      ##/  _.- _.-    \##  -  |  |                       -
+//      ##\#=_  '    _=#/##  |  |  |  /---\  |      |      |   ===\  |  __
+//      ##   \\#####//   ##  |  |  |  |___/  |===\  |===\  |   ___|  |==/
+//      ##       |       ##  |  |  |  |      |   |  |   |  |  /   |  |
+//      ##       |       ##  |  \= \= \====  |   |  |   |  |  \___/  |
+//      ##\___   |   ___/
+//      ##    \__|__/
+//
+
+import { Registry } from './registry.js'
 import { Item } from './item.js'
 import { loader, Location } from '../loader.js'
 import { Cube, RenderObject } from '../render.js'
 import path from 'path'
+import { Quaternion } from '../../world/quaternion.js'
+import { Vec3 } from '../../world/vector.js'
 
-export class Block extends MinecraftObject {
+export class BlockType extends Registry {
 
   item?: Item
   multipart: boolean
@@ -21,9 +33,9 @@ export class Block extends MinecraftObject {
     this.properties = properties
   }
 
-  static fromJson(location: Location, json: any): Block {
+  static fromJson(location: Location, json: any): BlockType {
     const itemLoc = json.item ? Location.fromJson(json.item) : undefined
-    return new Block(
+    return new BlockType(
       location, 
       json.name, 
       json.multipart, 
@@ -43,7 +55,7 @@ export class Block extends MinecraftObject {
     }
   }
 
-  static resource(location: Location, name: string, json: any): Block {
+  static resource(location: Location, name: string, json: any): BlockType {
     const multipart = json.multipart !== undefined
     let blockstates
     let item
@@ -58,7 +70,7 @@ export class Block extends MinecraftObject {
       item = new Item(location, name, itemJson)
     }
 
-    const block = new Block(location, name, item, multipart, blockstates)
+    const block = new BlockType(location, name, item, multipart, blockstates)
     block.buildProperties()
     return block
   }
@@ -128,8 +140,8 @@ export class BlockState {
   static resource(models: any, condition: any): BlockState {
     return new BlockState(
       Array.isArray(models)
-        ? models.map((model: any) => BlockModel.resource(loader.resourceJson('models', Location.fromJson(model.model)), {}, Rotation3D.fromGradeAxis(model)))
-        : [BlockModel.resource(loader.resourceJson('models', Location.fromJson(models['model'])), {}, Rotation3D.fromGradeAxis(models))],
+        ? models.map((model: any) => BlockModel.resource(loader.resourceJson('models', Location.fromJson(model.model)), {}, Quaternion.fromAxisAngle(new Vec3(model.x, model.y, model.z), 0)))
+        : [BlockModel.resource(loader.resourceJson('models', Location.fromJson(models['model'])), {}, Quaternion.fromAxisAngle(new Vec3(models.x, models.y, models.z), 0))],
       Condition.resource(condition)
     )
   }
@@ -189,7 +201,7 @@ export class BlockModel {
 
   constructor(readonly render: RenderObject) { }
 
-  static resource(json: any, pTextures: Record<string, string>, rotation?: Rotation3D): BlockModel {
+  static resource(json: any, pTextures: Record<string, string>, rotation?: Quaternion): BlockModel {
     let cubes: Cube[] = []
 
     const textures = {

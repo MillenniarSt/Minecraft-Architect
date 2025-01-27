@@ -9,7 +9,7 @@
 //      ##    \__|__/
 //
 
-import fs from 'fs-extra'
+import fs from 'fs'
 import path from 'path'
 import { RenderObject } from '../render.js'
 import { Location } from '../loader.js'
@@ -43,7 +43,7 @@ export abstract class Registry {
 
     const iconFile = iconPath(this.location)
     try {
-      fs.mkdirsSync(path.dirname(iconFile))
+      fs.mkdirSync(path.dirname(iconFile), { recursive: true })
       fs.writeFileSync(iconFile, this.defaultRender().toIcon(this.secondRender()))
     } catch(e) {
       console.warn('Can not generate icon of object:', this.location.toString())
@@ -52,7 +52,7 @@ export abstract class Registry {
   }
 
   private saveInFile(file: string, json: {}) {
-    fs.mkdirsSync(path.dirname(file))
+    fs.mkdirSync(path.dirname(file), { recursive: true })
     fs.writeFileSync(file, JSON.stringify(json, null, 4).replace(
       /\[\s*([\d.,\s]+)\s*\]/g,
       (_, match) => `[${match.replace(/\s+/g, ' ').trim()}]`

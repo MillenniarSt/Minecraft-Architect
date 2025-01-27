@@ -9,12 +9,12 @@
 //      ##    \__|__/
 //
 
-import fs from "fs-extra"
+import fs from "fs"
 import path from "path"
-import { Pos3D, Rotation3D, Size3D } from "../world/world3D.js"
 import { loader, Location } from "./loader.js"
 import { PNG } from "pngjs"
-import { toGrades, toRadiants } from "../world/world2D.js"
+import { getAxis, Quaternion, toGrades, toRadiants } from "../world/quaternion.js"
+import { Vec3 } from "../world/vector.js"
 
 export class RenderObject {
 
@@ -31,7 +31,7 @@ export class RenderObject {
     }
 
     save(file: string) {
-        fs.mkdirsSync(path.dirname(file))
+        fs.mkdirSync(path.dirname(file), { recursive: true })
         fs.writeFileSync(file, JSON.stringify(this.toJson(), null, 4).replace(
             /\[\s*([\d.,\s]+)\s*\]/g,
             (_, match) => `[${match.replace(/\s+/g, ' ').trim()}]`
@@ -47,13 +47,13 @@ export class RenderObject {
             if (cube.rotation.y === 0) {
                 let texture = cube.faces[0]
                 if (texture) {
-                    const pos: [number, number] = [16 - (((cube.size.height / 2) + cube.pos.y) * 16), 16 - (((cube.size.width / 2) + cube.pos.x) * 16)]
+                    const pos: [number, number] = [16 - (((cube.size.y / 2) + cube.pos.y) * 16), 16 - (((cube.size.x / 2) + cube.pos.x) * 16)]
                     textureVoid = this.writeIconTexture(texture, icon, pos)
                 }
             } else {
                 const texture = cube.faces[5]
                 if (texture) {
-                    const pos: [number, number] = [16 - (((cube.size.height / 2) + cube.pos.y) * 16), 16 - (((cube.size.length / 2) + cube.pos.z) * 16)]
+                    const pos: [number, number] = [16 - (((cube.size.y / 2) + cube.pos.y) * 16), 16 - (((cube.size.z / 2) + cube.pos.z) * 16)]
                     textureVoid = this.writeIconTexture(texture, icon, pos)
                 }
             }
@@ -113,23 +113,23 @@ export function getFaceIndex(face: string): number {
 
 export class Cube {
 
-    rotation: Rotation3D = Rotation3D.north()
-    pos: Pos3D
-    size: Size3D
+    rotation: Quaternion = Quaternion.NORTH
+    pos: Vec3
+    size: Vec3
     faces: [Texture?, Texture?, Texture?, Texture?, Texture?, Texture?]
 
-    constructor(pos: Pos3D, size: Size3D, faces: [Texture?, Texture?, Texture?, Texture?, Texture?, Texture?] = []) {
+    constructor(pos: Vec3, size: Vec3, faces: [Texture?, Texture?, Texture?, Texture?, Texture?, Texture?] = []) {
         this.pos = pos
         this.size = size
         this.faces = faces
     }
 
     static resource(json: any, textures: any): Cube {
-        const size = new Size3D((json.to[0] - json.from[0]) / 16, (json.to[2] - json.from[2]) / 16, (json.to[1] - json.from[1]) / 16)
-        let cube = new Cube(new Pos3D(json.from[0] / 16 + (size.width / 2), json.from[2] / 16 + (size.length / 2), json.from[1] / 16 + (size.height / 2)), size)
+        const size = new Vec3(json.to[0] - json.from[0], json.to[1] - json.from[1], json.to[2] - json.from[2]).multiplyScalar(0.0625)
+        let cube = new Cube(new Vec3((json.from[0] / 16) + (size.x / 2), (json.from[1] / 16) + (size.y / 2), (json.from[2] / 16) + (size.z / 2)), size)
 
         if (json.rotation) {
-            cube.rotate(Rotation3D.axis(json.rotation.axis, toRadiants(json.rotation.angle)), Pos3D.fromJson(json.rotation.origin))
+            cube.rotate(Quaternion.fromAxisAngle(getAxis(json.rotation.axis), toRadiants(json.rotation.angle)), Vec3.fromJson(json.rotation.origin))
         }
         Object.keys(json.faces).forEach((face) => {
             const i = getFaceIndex(face)
@@ -145,7 +145,7 @@ export class Cube {
         let cube = new Cube(json.pos, json.size)
 
         if (json.rotation) {
-            cube.rotation = Rotation3D.fromJson(json.rotation)
+            cube.rotation = Quaternion.fromJson(json.rotation)
         }
         Object.keys(json.faces).forEach((face) => {
             const i = getFaceIndex(face)
@@ -157,8 +157,8 @@ export class Cube {
         return cube
     }
 
-    rotate(rotation: Rotation3D, pivot: Pos3D = new Pos3D(0.5, 0.5, 0.5)) {
-        let [cx, cy, cz] = this.pos.toJSON();
+    rotate(rotation: Quaternion, pivot: Vec3 = new Vec3(0.5, 0.5, 0.5)) {
+        let [cx, cy, cz] = this.pos.toJson()
 
         cx -= pivot.x
         cy -= pivot.y
@@ -188,15 +188,15 @@ export class Cube {
             cy = newY
         }
 
-        this.pos = new Pos3D(cx + pivot.x, cz + pivot.z, cy + pivot.y)
-        this.rotation = this.rotation.plus(rotation)
+        this.pos = new Vec3(cx + pivot.x, cy + pivot.y, cz + pivot.z)
+        this.rotation = this.rotation.add(rotation)
     }
 
     toJson() {
         return {
-            rotation: this.rotation.toJSON(),
-            pos: this.pos.toJSON(),
-            size: this.size.toJSON(),
+            rotation: this.rotation.toJson(),
+            pos: this.pos.toJson(),
+            size: this.size.toJson(),
             faces: [
                 ...this.faces.map((face) => face?.toJson())
             ]
@@ -260,7 +260,7 @@ export class Texture {
             }
         }
 
-        fs.createFileSync(file)
+        fs.mkdirSync(path.dirname(file), { recursive: true })
         fs.writeFileSync(file, PNG.sync.write(texture))
     }
 

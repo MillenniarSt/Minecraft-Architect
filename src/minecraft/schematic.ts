@@ -9,14 +9,24 @@ export class Schematic {
         if (!this.blocks.has(pos.x)) {
             this.blocks.set(pos.x, new Map())
         }
-        if (!this.blocks.get(pos.x)?.has(pos.y)) {
-            this.blocks.get(pos.x)?.set(pos.y, new Map())
+        if (!this.blocks.get(pos.x)!.has(pos.y)) {
+            this.blocks.get(pos.x)!.set(pos.y, new Map())
         }
-        this.blocks.get(pos.x)?.get(pos.y)?.set(pos.z, block)
+        this.blocks.get(pos.x)!.get(pos.y)!.set(pos.z, block)
     }
 
-    getBlock(x: number, y: number, z: number): Block | undefined {
-        return this.blocks.get(x)?.get(y)?.get(z)
+    getBlock(pos: Vec3): Block | undefined {
+        return this.blocks.get(pos.x)?.get(pos.y)?.get(pos.z)
+    }
+
+    removeBlock(pos: Vec3) {
+        this.blocks.get(pos.x)?.get(pos.y)?.delete(pos.z)
+        if (!this.blocks.get(pos.x)?.get(pos.y)?.size) {
+            this.blocks.get(pos.x)?.delete(pos.y)
+        }
+        if (!this.blocks.get(pos.x)?.size) {
+            this.blocks.delete(pos.x)
+        }
     }
 
     join(schematic: Schematic) {
@@ -25,11 +35,23 @@ export class Schematic {
                 this.blocks.set(x, new Map())
             }
             row.forEach((column, y) => {
-                if (!this.blocks.get(x)?.has(y)) {
-                    this.blocks.get(x)?.set(y, new Map())
+                if (!this.blocks.get(x)!.has(y)) {
+                    this.blocks.get(x)!.set(y, new Map())
                 }
-                column.forEach((block, z) => this.blocks.get(x)?.get(y)?.set(z, block))
+                column.forEach((block, z) => this.blocks.get(x)!.get(y)!.set(z, block))
             })
         })
+    }
+
+    clear() {
+        this.blocks = new Map()
+    }
+
+    toNbt() {
+        // TODO
+    }
+
+    toSchem() {
+        // TODO
     }
 }

@@ -19,22 +19,19 @@
   "author": "Millenniar",
   "license": "ISC",
   "devDependencies": {
-    "@types/adm-zip": "^0.5.5",
-    "@types/fs-extra": "^11.0.4",
-    "@types/node": "^22.5.5",
+    "@types/adm-zip": "^0.5.7",
+    "@types/node": "^22.10.10",
     "@types/pngjs": "^6.0.5",
     "@types/uuid": "^10.0.0",
-    "@types/ws": "^8.5.13",
+    "@types/ws": "^8.5.14",
     "gulp": "^5.0.0",
-    "typescript": "^5.6.2"
+    "typescript": "^5.7.3"
   },
   "dependencies": {
     "adm-zip": "^0.5.16",
     "appdata-path": "^1.0.0",
-    "chalk": "^5.3.0",
-    "fs-extra": "^11.2.0",
     "pngjs": "^7.0.0",
-    "uuid": "^10.0.0",
+    "uuid": "^11.0.5",
     "ws": "^8.18.0"
   }
 }

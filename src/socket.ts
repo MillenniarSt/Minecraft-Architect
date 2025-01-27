@@ -10,7 +10,6 @@
 //
 
 import { WebSocketServer, WebSocket } from 'ws'
-import chalk from 'chalk'
 import { v4 } from 'uuid'
 
 export type WebSocketMessage = {
@@ -36,7 +35,7 @@ export type WebSocketError = {
 export type OnMessage = Map<string, (data: any, ws: WsActions) => void>
 
 export type WsActions = {
-    respond: (data: {}, err?: WebSocketError) => void,
+    respond: (data?: {}, err?: WebSocketError) => void,
     sendToServer: (path: string, data?: {}) => void
     sendToClient: (path: string, data?: {}) => void
     webSocket: WebSocket
@@ -85,7 +84,7 @@ export class ArchitectServer {
 
             const respond = (id: string | undefined | null, data?: {}, err?: WebSocketError) => {
                 if (id === undefined) {
-                    console.log(chalk.red(`[ Socket ] |  RES   | ERR | Trying to respond without a response id`))
+                    console.error('Trying to respond without a response id')
                 } else {
                     ws.send(JSON.stringify({ id: id, data: data ?? {}, err: err }))
                 }
@@ -106,25 +105,25 @@ export class ArchitectServer {
                                     webSocket: ws
                                 })
                             } else {
-                                console.log(chalk.redBright(`[ Socket ] |  GET   | ERR | Invalid Message Path : ${message.path}`))
+                                console.error(`Invalid Message Path : ${message.path}`)
                             }
                         } catch (error) {
                             respond(message.id ?? null, { path: message.path, data: message.data }, toSocketError(error))
                         }
                     } else {
                         if (message.err) {
-                            console.log(chalk.redBright(`[ Socket ] |  GET   | ERR | Response Error : ${message.err.stack}`))
+                            console.error(`Response Error : ${message.err.stack}`)
                         }
                         this.onResponse(message)
                     }
                 } catch (error) {
-                    console.log(chalk.redBright(`[ Socket ] |  GET   | ERR | Invalid Message`))
+                    console.log(`Invalid Message`)
                     respond(null, {}, toSocketError(error))
                 }
             })
 
             ws.on('error', (err) => {
-                console.error('[ Socket ] |  MAIN  | ERR |', err)
+                console.error(err)
             })
         })
     }

@@ -11,10 +11,10 @@
 
 import { loader, Location } from "../minecraft/loader.js"
 import { project } from "../project.js"
-import { displayName } from "../util.js"
 import { ProjectConfigFile } from "./config.js"
 import { OnMessage } from "../socket.js"
 import { iconPath } from "../paths.js"
+import { idToLabel } from "../util/form.js"
 
 export class Variation {
 
@@ -55,7 +55,7 @@ export class Material {
         readonly base: Location = location,
         readonly icon: Location = base,
         readonly preview: Location = base,
-        readonly name: string = displayName(location.id)
+        readonly name: string = idToLabel(location.id)
     ) { }
 
     static fromJson(json: any): Material {
@@ -66,7 +66,7 @@ export class Material {
             base, 
             json.icon ? Location.fromJson(json.icon) : base, 
             json.preview ? Location.fromJson(json.preview) : new Location(base.mod, `block\\${base.id}`), 
-            json.name ?? displayName(location.id)
+            json.name ?? idToLabel(location.id)
         )
     }
 

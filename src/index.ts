@@ -12,7 +12,6 @@
 import { OnMessage } from './socket.js'
 import { loader } from './minecraft/loader.js'
 import { registerRenderMessages } from './minecraft/messages.js'
-import { registerElementsMessages } from './elements/messages.js'
 import { project, Project, setProject } from './project.js'
 import { registerMaterialMessages } from './config/material.js'
 
@@ -50,17 +49,22 @@ process.on('message', async (message) => {
         ['load/configs', async (data, ws) => {
             loader.load()
             await project.loadConfigs()
-            ws.respond({})
+            ws.respond()
         }],
         ['load/project', async (data, ws) => {
-            ws.respond({})
+            ws.respond()
+        }],
+        ['open-channel', (data, ws) => {
+            if(data.id.startsWith('export')) {
+                
+            }
+            ws.respond() 
         }]
     ])
 
     setProject(new Project(data.identifier, data.port))
 
     registerRenderMessages(socketMessages)
-    registerElementsMessages(socketMessages)
     registerMaterialMessages(socketMessages)
 
     project.server.open(socketMessages)

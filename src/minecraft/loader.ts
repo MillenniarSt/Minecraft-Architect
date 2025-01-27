@@ -9,7 +9,7 @@
 //      ##    \__|__/
 //
 
-import fs from 'fs-extra'
+import fs from 'fs'
 import { Item } from "./register/item.js"
 import AdmZip from "adm-zip"
 import path from "path"

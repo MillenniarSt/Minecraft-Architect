@@ -40,7 +40,7 @@ export class BlockType extends Registry {
       json.name, 
       json.multipart, 
       json.states[0]?.addictionable === true, 
-      json.states.map((blocstate: any) => BlockState.fromJson(blocstate)),
+      json.states.map((blocstate: any) => BlockState.fromJson(blocstate, location)),
       json.properties
     )
   }
@@ -61,9 +61,9 @@ export class BlockType extends Registry {
     let item
 
     if (multipart) {
-      blockstates = json.multipart.map((part: any) => BlockState.resource(part.apply, part.when))
+      blockstates = json.multipart.map((part: any) => BlockState.resource(part.apply, location, part.when))
     } else {
-      blockstates = Object.keys(json.variants).map((condition) => BlockState.resource(json.variants[condition], condition))
+      blockstates = Object.keys(json.variants).map((condition) => BlockState.resource(json.variants[condition], location, condition))
     }
     const itemJson = loader.resourceJson('models/item', location)
     if (itemJson) {
@@ -135,10 +135,11 @@ export class BlockType extends Registry {
 
 export class BlockState {
   
-  constructor(readonly models: BlockModel[], readonly condition: Condition = Condition.all()) { }
+  constructor(readonly block: Location, readonly models: BlockModel[], readonly condition: Condition = Condition.all()) { }
 
-  static resource(models: any, condition: any): BlockState {
+  static resource(models: any, block: Location, condition: any): BlockState {
     return new BlockState(
+      block,
       Array.isArray(models)
         ? models.map((model: any) => BlockModel.resource(loader.resourceJson('models', Location.fromJson(model.model)), {}, Quaternion.fromAxisAngle(new Vec3(model.x, model.y, model.z), 0)))
         : [BlockModel.resource(loader.resourceJson('models', Location.fromJson(models['model'])), {}, Quaternion.fromAxisAngle(new Vec3(models.x, models.y, models.z), 0))],
@@ -146,8 +147,8 @@ export class BlockState {
     )
   }
 
-  static fromJson(json: any): BlockState {
-    return new BlockState(json.models.map((model: any) => new BlockModel(model)), Condition.fromJson(json.condition))
+  static fromJson(json: any, block: Location): BlockState {
+    return new BlockState(block, json.models.map((model: any) => new BlockModel(model)), Condition.fromJson(json.condition))
   }
 
   toJson(location: Location, blockstate: number): {} {

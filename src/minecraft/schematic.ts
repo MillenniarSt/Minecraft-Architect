@@ -1,5 +1,9 @@
+import { encode, Int, Short } from "nbt-ts";
 import { Vec3 } from "../world/vector.js";
 import { Block } from "./elements/block.js";
+import { loader } from "./loader.js";
+import { BlockState } from "./register/block.js";
+import * as zlib from 'zlib';
 
 export class Schematic {
 
@@ -47,11 +51,116 @@ export class Schematic {
         this.blocks = new Map()
     }
 
-    toNbt() {
-        // TODO
+    getSize(): [Vec3, Vec3] {
+        let minX = Infinity, minY = Infinity, minZ = Infinity;
+        let maxX = -Infinity, maxY = -Infinity, maxZ = -Infinity;
+
+        for (const [x, yMap] of this.blocks) {
+            for (const [y, zMap] of yMap) {
+                for (const z of zMap.keys()) {
+                    minX = Math.min(minX, x)
+                    minY = Math.min(minY, y)
+                    minZ = Math.min(minZ, z)
+                    maxX = Math.max(maxX, x)
+                    maxY = Math.max(maxY, y)
+                    maxZ = Math.max(maxZ, z)
+                }
+            }
+        }
+        return [new Vec3(minX, minY, minZ), new Vec3(maxX - minX +1, maxY - minY +1, maxZ - minZ +1)]
     }
 
-    toSchem() {
-        // TODO
+    toNbt(): Buffer {
+        const [offset, size] = this.getSize()
+        const palette: BlockState[] = []
+        const blocks: { pos: [number, number, number], state: number }[] = []
+
+        for (const [x, yMap] of this.blocks) {
+            for (const [y, zMap] of yMap) {
+                for (const [z, block] of zMap) {
+                    let index = palette.indexOf(block.state)
+                    if(index < 0) {
+                        palette.push(block.state)
+                        index = palette.length -1
+                    }
+                    blocks.push({ pos: [x + offset.x, y + offset.y, z + offset.z], state: index})
+                }
+            }
+        }
+
+        return zlib.gzipSync(encode('', {
+            size: [new Int(size.x), new Int(size.y), new Int(size.z)],
+            entities: [],
+            blocks: blocks.map((block) => {
+                return {
+                    pos: [new Int(block.pos[0]), new Int(block.pos[1]), new Int(block.pos[2])],
+                    state: new Int(block.state)
+                }
+            }),
+            palette: palette.map((state) => {
+                return {
+                    Name: state.block.toString()
+                }
+            }),
+            DataVersion: new Int(loader.dataVersion)
+        }))
+    }
+
+    toSchem(): Buffer {
+        const [offset, size] = this.getSize()
+        const palette: BlockState[] = [loader.blocks.get('minecraft:air')!.blockstates[0]]
+        const blocks: number[] = []
+
+        for (let y = offset.y; y < offset.y + size.y; y++) {
+            for (let z = offset.z; z < offset.z + size.z; z++) {
+                for (let x = offset.x; x < offset.x + size.x; x++) {
+                    const block = this.blocks.get(x)?.get(y)?.get(z)
+                    if(block) {
+                        let index = palette.indexOf(block.state)
+                        if(index < 0) {
+                            palette.push(block.state)
+                            index = palette.length -1
+                        }
+                        blocks.push(index)
+                    } else {
+                        blocks.push(0)
+                    }
+                }
+            }
+        }
+
+        return zlib.gzipSync(encode('Schematic', {
+            Version: new Int(2),
+            Width: new Short(size.x),
+            Height: new Short(size.y),
+            Length: new Short(size.z),
+            PaletteMax: new Int(palette.length),
+            Palette: Object.fromEntries(palette.map((state, i) => [state.block.toString(), new Int(i)])),
+            BlockData: Buffer.from(blocks.map((block) => block)),
+            BlockEntities: [],
+            Metadata: {
+                WEOffsetX: new Int(offset.x),
+                WEOffsetY: new Int(offset.y),
+                WEOffsetZ: new Int(offset.z)
+            },
+            DataVersion: new Int(loader.dataVersion),
+            Offset: new Int32Array([0, 0, 0])
+        }))
+    }
+
+    print() {
+        const [offset, size] = this.getSize()
+        console.log(`Schematic: [offset: ${offset.toJson()}, size: ${size.toJson()}]`)
+
+        for (let z = offset.z; z < offset.z + size.z; z++) {
+            console.log(`  z: ${z}`)
+            for (let y = offset.y + size.y -1; y >= offset.y; y--) {
+                let line: string = ''
+                for (let x = offset.x; x < offset.x + size.x; x++) {
+                    line += this.blocks.get(x)?.get(y)?.get(z) !== undefined ? '#' : ' '
+                }
+                console.log(line)
+            }
+        }
     }
 }

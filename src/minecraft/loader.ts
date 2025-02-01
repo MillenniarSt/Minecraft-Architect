@@ -19,7 +19,8 @@ import { dataDir, minecraftDir, renderDir } from "../paths.js"
 
 export class MinecraftLoader {
 
-  version: string
+  readonly version: string
+  readonly dataVersion: number
   private archive: AdmZip
 
   language: string
@@ -27,8 +28,9 @@ export class MinecraftLoader {
   blocks: Map<string, BlockType> = new Map()
   items: Map<string, Item> = new Map()
 
-  constructor(version: string, language?: string) {
+  constructor(version: string, dataVersion: number, language?: string) {
     this.version = version
+    this.dataVersion = dataVersion
     this.language = language ?? 'en_us'
     this.archive = new AdmZip(path.join(getAppDataPath.default('.minecraft'), 'versions', version, `${version}.jar`))
   }
@@ -182,4 +184,4 @@ export class Location {
 
 export const version = '1.20.1'
 
-export const loader: MinecraftLoader = new MinecraftLoader(version)
+export const loader: MinecraftLoader = new MinecraftLoader(version, 3465)

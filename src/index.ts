@@ -14,6 +14,14 @@ import { loader } from './minecraft/loader.js'
 import { registerRenderMessages } from './minecraft/messages.js'
 import { project, Project, setProject } from './project.js'
 import { registerMaterialMessages } from './config/material.js'
+import { Exporter } from './exporter.js'
+import fs from 'fs'
+
+/**
+ * Import all Builders here
+ * so you make sure they are registered
+ */
+import './materials/simple/base.js'
 
 const log = console.log
 console.log = (...args) => {
@@ -56,11 +64,17 @@ process.on('message', async (message) => {
         }],
         ['open-channel', (data, ws) => {
             if(data.id.startsWith('export')) {
-                
+                const exporter = Exporter.fromJson(data.data)
+                const schematic = exporter.build()
+                schematic.print()
+                //fs.writeFileSync('C:\\Users\\Angelo\\Desktop\\Minecraft\\test.nbt', schematic.toNbt())
+                fs.writeFileSync('C:\\Users\\Angelo\\Desktop\\Minecraft\\test.schem', schematic.toSchem())
             }
             ws.respond() 
         }]
     ])
+
+    loader.load()
 
     setProject(new Project(data.identifier, data.port))
 

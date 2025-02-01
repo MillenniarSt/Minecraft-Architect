@@ -9,7 +9,7 @@ import { Vec2 } from "../world/vector.js"
 import { materialFromJson } from "./collective.js"
 
 export type Paint<T extends {} = {}> = {
-    location: Location
+    id: string
     additional?: T
 }
 
@@ -18,11 +18,7 @@ export abstract class Material<T extends {} = {}> {
     paints: RandomList<Paint<T>>
 
     constructor(json: any) {
-        this.paints = json.paints ? RandomList.fromJson(json.paints, (paint) => { 
-            return { id: paint.location.toString(), additional: paint.additional } 
-        }, (json) => {
-            return { location: json.id, additional: json.additional }
-        }) : new RandomList()
+        this.paints = json.paints ? RandomList.fromJson(json.paints) : new RandomList()
         this.loadSettings(json.data)
     }
 
@@ -41,7 +37,7 @@ export abstract class Material<T extends {} = {}> {
             return null
         }
 
-        return this.previewNotEmpty(size).map((row) => row.map((paint) => iconPath(paint.location)))
+        return this.previewNotEmpty(size).map((row) => row.map((paint) => iconPath(Location.fromJson(paint.id))))
     }
 
     abstract previewNotEmpty(size: Vec2): Paint<T>[][]

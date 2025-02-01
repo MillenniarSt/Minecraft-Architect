@@ -1,3 +1,5 @@
+import { Block } from "../../minecraft/elements/block.js";
+import { loader } from "../../minecraft/loader.js";
 import { Schematic } from "../../minecraft/schematic.js";
 import { Seed } from "../../util/random.js";
 import { Line3 } from "../../world/geo/line.js";
@@ -27,12 +29,15 @@ export class BaseMaterial extends Material {
     }
 
     applySurfaceNotEmpty(surface: Surface, seed: Seed): Schematic {
-        console.debug('surface', surface)
+        // TODO
         return new Schematic()
     }
 
     applyObjectNotEmpty(object: Object3, seed: Seed): Schematic {
-        console.debug('object', object)
-        return new Schematic()
+        const schematic = new Schematic()
+        object.getBlocks().forEach((vec) => {
+            schematic.setBlock(vec, new Block(loader.blocks.get(this.paints.seeded(seed)!.id)!.blockstates[0]))
+        })
+        return schematic
     }
 }

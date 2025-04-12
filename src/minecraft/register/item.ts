@@ -11,10 +11,12 @@
 
 import { Cube, RenderObject, Texture } from "../render.js"
 import { Registry } from "./registry.js"
-import { loader, Location } from "../loader.js"
+import { loader } from "../loader.js"
 import path from "path"
 import { Vec3 } from "../../world/vector.js"
 import { Quaternion } from "../../world/quaternion.js"
+import { getProject } from "../../project.js"
+import { Location } from "../location.js"
 
 export class Item extends Registry {
 
@@ -50,7 +52,7 @@ export class Item extends Registry {
 
   renderToSave(): Record<string, RenderObject> {
     return Object.fromEntries([
-      [path.join(loader.renderDir, 'items', `${this.location.toDir()}.json`), this.model.render]
+      [path.join(getProject().renderDir, 'items', `${this.location.toDir()}.json`), this.model.render]
     ])
   }
 }
@@ -133,7 +135,7 @@ export class ItemModel {
   toJson(location: Location): any {
     return {
       display: this.display.toJson(),
-      render: path.join(loader.renderDir, 'items', `${location.toDir()}.json`)
+      render: path.join(getProject().renderDir, 'items', `${location.toDir()}.json`)
     }
   }
 }

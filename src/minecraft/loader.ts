@@ -15,11 +15,13 @@ import AdmZip from "adm-zip"
 import path from "path"
 import getAppDataPath from 'appdata-path'
 import { BlockType } from "./register/block.js"
-import { dataDir, minecraftDir, renderDir } from "../paths.js"
+import { getProject, minecraftDir } from '../project.js'
+import { Location } from './location.js'
+
+export const MC_VERSION = '1.20.1'
 
 export class MinecraftLoader {
 
-  readonly version: string
   readonly dataVersion: number
   private archive: AdmZip
 
@@ -28,26 +30,25 @@ export class MinecraftLoader {
   blocks: Map<string, BlockType> = new Map()
   items: Map<string, Item> = new Map()
 
-  constructor(version: string, dataVersion: number, language?: string) {
-    this.version = version
+  constructor(dataVersion: number, language?: string) {
     this.dataVersion = dataVersion
     this.language = language ?? 'en_us'
-    this.archive = new AdmZip(path.join(getAppDataPath.default('.minecraft'), 'versions', version, `${version}.jar`))
+    this.archive = new AdmZip(path.join(minecraftDir, 'versions', MC_VERSION, `${MC_VERSION}.jar`))
   }
 
   load() {
     console.log('Loading Minecraft Resource')
 
-    if(!fs.existsSync(this.dataDir) || !fs.existsSync(this.renderDir)) {
+    if(!fs.existsSync(getProject().dataDir) || !fs.existsSync(getProject().renderDir)) {
       this.generate()
     } else {
       this.blocks = new Map()
       this.items = new Map()
 
-      fs.readdirSync(this.dataDir).forEach((pack) => {
-        fs.readdirSync(path.join(this.dataDir, pack, 'block')).forEach((block) => {
+      fs.readdirSync(getProject().dataDir).forEach((pack) => {
+        fs.readdirSync(path.join(getProject().dataDir, pack, 'block')).forEach((block) => {
           const location = new Location(pack, block.substring(0, block.lastIndexOf('.')))
-          this.blocks.set(location.toString(), BlockType.fromJson(location, JSON.parse(fs.readFileSync(path.join(this.dataDir, pack, 'block', block), 'utf8'))))
+          this.blocks.set(location.toString(), BlockType.fromJson(location, JSON.parse(fs.readFileSync(path.join(getProject().dataDir, pack, 'block', block), 'utf8'))))
         })
       })
 
@@ -117,11 +118,11 @@ export class MinecraftLoader {
   }
 
   dataFile(dir: string, location: Location, extension: string): string {
-    return path.join(this.dataDir, this.resourcePath(dir, location, extension))
+    return path.join(getProject().dataDir, this.resourcePath(dir, location, extension))
   }
 
   renderFile(dir: string, location: Location, extension: string): string {
-    return path.join(this.renderDir, dir, `${location.toDir()}.${extension}`)
+    return path.join(getProject().renderDir, dir, `${location.toDir()}.${extension}`)
   }
 
   resource(dir: string, location: Location, extension: string): Buffer | null {
@@ -136,52 +137,8 @@ export class MinecraftLoader {
   }
 
   get resourceJar(): string {
-    return path.join(minecraftDir, 'versions', this.version, `${this.version}.jar`)
-  }
-
-  get dataDir(): string {
-    return path.join(dataDir, this.version)
-  }
-
-  get renderDir(): string {
-    return path.join(renderDir, this.version)
+    return path.join(minecraftDir, 'versions', MC_VERSION, `${MC_VERSION}.jar`)
   }
 }
 
-export class Location {
-
-  static readonly UNDEFINED = new Location('beaver', 'undefined')
-
-  constructor(readonly mod: string, readonly id: string) { }
-
-  static minecraft(id: string): Location {
-    return new Location('minecraft', id)
-  }
-
-  static fromJson(json: string): Location {
-    return new Location(
-      json.includes(':') ? json.substring(0, json.indexOf(':')) : 'minecraft',
-      json.includes(':') ? json.substring(json.indexOf(':') + 1) : json
-    )
-  }
-
-  toJson(): string {
-    return `${this.mod}:${this.id}`
-  }
-
-  equals(other: Location): boolean {
-    return this.mod == other.mod && this.id == other.id
-  }
-
-  toString(): string {
-    return this.toJson()
-  }
-
-  toDir(): string {
-    return `${this.mod}/${this.id}`
-  }
-}
-
-export const version = '1.20.1'
-
-export const loader: MinecraftLoader = new MinecraftLoader(version, 3465)
+export const loader: MinecraftLoader = new MinecraftLoader(3465)

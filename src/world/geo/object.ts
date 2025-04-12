@@ -1,8 +1,9 @@
-import { Material } from "../../materials/material.js";
 import { Schematic } from "../../minecraft/schematic.js";
-import { Seed } from "../../util/random.js";
+import { Seed } from "../../exporter/random.js";
 import { Ray } from "../ray.js";
 import { Vec3 } from "../vector.js";
+import { BlockType } from "../../minecraft/register/block.js";
+import { Block } from "../../minecraft/elements/block.js";
 
 export class Object3 {
 
@@ -15,8 +16,12 @@ export class Object3 {
         return new Object3(json.vertices.map(Vec3.fromJson), json.triangles)
     }
 
-    buildMaterial(material: Material, seed: Seed): Schematic {
-        return material.applyObject(this, seed)
+    buildMaterial(material: BlockType, seed: Seed): Schematic {
+        const schematic = new Schematic()
+        this.getBlocks().forEach((vec) => {
+            schematic.setBlock(vec, new Block(material.blockstates[0]))
+        })
+        return schematic
     }
 
     getBlocks(): Vec3[] {
@@ -24,7 +29,6 @@ export class Object3 {
 
         const min = this.vertices.reduce((acc, v) => acc.min(v), this.vertices[0])
         const max = this.vertices.reduce((acc, v) => acc.max(v), this.vertices[0])
-        console.debug('Prism', min.toJson(), max.toJson())
 
         for (let x = Math.floor(min.x); x < Math.ceil(max.x); x++) {
             for (let y = Math.floor(min.y); y < Math.ceil(max.y); y++) {
@@ -46,7 +50,7 @@ export class Object3 {
             const v0 = this.vertices[triangle[0]];
             const v1 = this.vertices[triangle[1]];
             const v2 = this.vertices[triangle[2]];
-    
+
             if (ray.intersectsTriangle(v0, v1, v2)) {
                 return true
             }

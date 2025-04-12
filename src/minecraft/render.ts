@@ -11,10 +11,11 @@
 
 import fs from "fs"
 import path from "path"
-import { loader, Location } from "./loader.js"
+import { loader } from "./loader.js"
 import { PNG } from "pngjs"
 import { getAxis, Quaternion, toGrades, toRadiants } from "../world/quaternion.js"
 import { Vec3 } from "../world/vector.js"
+import { Location } from "./location.js"
 
 export class RenderObject {
 

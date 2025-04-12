@@ -1,6 +1,6 @@
 {
     "identifier": "minecraft",
-    "version": "0.0.0",
+    "version": "1.0.0-1.20.1",
     "port": 8225,
     "name": "Minecraft",
     "icon": "resources\\icon.png"

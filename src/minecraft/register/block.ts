@@ -11,11 +11,13 @@
 
 import { Registry } from './registry.js'
 import { Item } from './item.js'
-import { loader, Location } from '../loader.js'
+import { loader } from '../loader.js'
 import { Cube, RenderObject } from '../render.js'
 import path from 'path'
 import { Quaternion } from '../../world/quaternion.js'
 import { Vec3 } from '../../world/vector.js'
+import { getProject } from '../../project.js'
+import { Location } from "../location.js"
 
 export class BlockType extends Registry {
 
@@ -125,7 +127,7 @@ export class BlockType extends Registry {
 
     this.blockstates.forEach((blockstate, i) => {
        blockstate.models.forEach((model, j) => {
-        renders.push([path.join(loader.renderDir, 'blocks', `${this.location.toDir()}-${i}-${j}.json`), model.render])
+        renders.push([path.join(getProject().renderDir, 'blocks', `${this.location.toDir()}-${i}-${j}.json`), model.render])
        })
     })
 
@@ -240,7 +242,7 @@ export class BlockModel {
 
   toJson(location: Location, blockstate: number, index: number): any {
     return {
-      render: path.join(loader.renderDir, 'blocks', `${location.toDir()}-${blockstate}-${index}.json`)
+      render: path.join(getProject().renderDir, 'blocks', `${location.toDir()}-${blockstate}-${index}.json`)
     }
   }
 }

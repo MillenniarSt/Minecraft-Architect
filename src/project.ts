@@ -9,14 +9,24 @@
 //      ##    \__|__/
 //
 
-import { ArchitectServer } from "./socket.js";
+import { ArchitectServer, OnMessage } from "./connection/socket.js";
 import { MaterialConfig } from "./config/material.js";
+import { loader } from "./minecraft/loader.js";
+import path from 'path'
+import getAppDataPath from "appdata-path";
+import { Location } from "./minecraft/location.js";
 
-export let project: Project
+let project: Project | undefined
 
 export function setProject(pj: Project) {
     project = pj
 }
+
+export function getProject(): Project {
+    return project!
+}
+
+export const minecraftDir = getAppDataPath('.minecraft')
 
 export class Project {
 
@@ -25,39 +35,65 @@ export class Project {
     readonly configs: {
         material: MaterialConfig
     } = {
-        material: new MaterialConfig('materials.json')
-    }
+            material: new MaterialConfig('materials.json')
+        }
 
     readonly server: ArchitectServer
 
     constructor(
         identifier: string,
-        port: number
+        port: number,
+        readonly isClientSide: boolean
     ) {
         this.identifier = identifier
         this.server = new ArchitectServer(port)
     }
 
-    async generateConfigs() {
-        const entries = Object.entries(this.configs)
-        for(let i = 0; i < entries.length; i++) {
-            await entries[i][1].generate()
-        }
+    readonly dir: string = path.dirname(process.execPath)
+    readonly buildDir: string = path.join(this.dir, 'build')
+    readonly resourceDir: string = path.join(this.dir, 'resources')
+
+    readonly configDir: string = path.join(this.resourceDir, 'config')
+    readonly dataDir: string = path.join(this.resourceDir, 'data')
+    readonly renderDir: string = path.join(this.resourceDir, 'render')
+
+    iconPath(location: Location): string {
+        return path.join(this.resourceDir, 'render', 'icons', `${location.toDir()}.png`)
     }
 
+    private loadedConfigs = false
+
     async loadConfigs() {
-        const entries = Object.entries(this.configs)
-        for(let i = 0; i < entries.length; i++) {
-            entries[i][1].clear()
-            await entries[i][1].load()
+        if (!this.loadedConfigs) {
+            this.loadedConfigs = true
+            const entries = Object.entries(this.configs)
+            for (let i = 0; i < entries.length; i++) {
+                const config = entries[i][1]
+                if (await config.shouldGenerate()) {
+                    await config.generate()
+                } else {
+                    await config.load()
+                }
+            }
         }
     }
 
     async buildConfigs() {
         const entries = Object.entries(this.configs)
-        for(let i = 0; i < entries.length; i++) {
+        for (let i = 0; i < entries.length; i++) {
             entries[i][1].clear()
             await entries[i][1].build()
         }
     }
+}
+
+export function registerProjectMessages(messages: OnMessage) {
+    messages.set('load/configs', async (data, side, id) => {
+        loader.load()
+        await getProject().loadConfigs()
+        side.respond(id)
+    })
+    messages.set('load/project', async (data, side, id) => {
+        side.respond(id)
+    })
 }

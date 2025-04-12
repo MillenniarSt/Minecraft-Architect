@@ -9,12 +9,12 @@
 //      ##    \__|__/
 //
 
-import { loader, Location } from "../minecraft/loader.js"
-import { project } from "../project.js"
+import { loader } from "../minecraft/loader.js"
+import { getProject } from "../project.js"
 import { ProjectConfigFile } from "./config.js"
-import { OnMessage } from "../socket.js"
-import { iconPath } from "../paths.js"
+import { OnMessage } from "../connection/socket.js"
 import { idToLabel } from "../util/form.js"
+import { Location } from "../minecraft/location.js"
 
 export class Variation {
 
@@ -83,7 +83,7 @@ export class Material {
         return {
             id: this.location.toString(),
             label: this.name,
-            icon: iconPath(this.icon)
+            icon: getProject().iconPath(this.icon)
         }
     }
 }
@@ -97,7 +97,7 @@ export class MaterialGroup {
     ) { }
 
     static fromJson(json: any): MaterialGroup {
-        return new MaterialGroup(json.name, Location.fromJson(json.icon), json.materials.map((material: string) => project.configs.material.materials[Location.fromJson(material).toString()] ?? Material.UNDEFINED))
+        return new MaterialGroup(json.name, Location.fromJson(json.icon), json.materials.map((material: string) => getProject().configs.material.materials[Location.fromJson(material).toString()] ?? Material.UNDEFINED))
     }
 
     toJson(): {} {
@@ -168,22 +168,22 @@ export class MaterialConfig extends ProjectConfigFile {
 }
 
 export function registerMaterialMessages(messages: OnMessage) {
-    const config = project.configs.material
+    const config = getProject().configs.material
 
-    messages.set('data-pack/materials/default', (data, ws) => ws.respond({ id: config.default.location.toString() }))
-    messages.set('data-pack/materials/get', (data, ws) => {
-        ws.respond({
+    messages.set('data-pack/materials/default', (data, side, id) => side.respond(id, { paints: { list: [config.default.location.toString()] }, type: 'BaseMaterial', settings: {} }))
+    messages.set('data-pack/materials/get', (data, side, id) => {
+        side.respond(id, {
             groups: config.groups.map((group) => {
                 return {
                     label: group.name,
-                    icon: iconPath(group.icon),
+                    icon: getProject().iconPath(group.icon),
                     materials: group.materials.map((material) => material.toClient())
                 }
             }),
             materials: Object.entries(config.materials).map((entry) => entry[1].toClient())
         })
     })
-    messages.set('data-pack/materials/textures', (data, ws) => {
-        ws.respond(data.materials.map((row: any[]) => row.map((material: string) => iconPath(config.materials[material].icon))))
+    messages.set('data-pack/materials/textures', (data, side, id) => {
+        side.respond(id, data.materials.map((row: any[]) => row.map((material: string) => getProject().iconPath(config.materials[material].icon))))
     })
 }

@@ -1,7 +1,7 @@
-import { Material } from "../../materials/material.js";
 import { Schematic } from "../../minecraft/schematic.js";
-import { Seed } from "../../util/random.js";
+import { Seed } from "../../exporter/random.js";
 import { Vec3 } from "../vector.js";
+import { BlockType } from "../../minecraft/register/block.js";
 
 export class Surface {
 
@@ -14,8 +14,8 @@ export class Surface {
         return new Surface(json.vertices.map((v: any) => Vec3.fromJson(v)), json.triangles)
     }
 
-    buildMaterial(material: Material, seed: Seed): Schematic {
-        return material.applySurface(this, seed)
+    buildMaterial(material: BlockType, seed: Seed): Schematic {
+        return new Schematic()
     }
 
     toJson(): {} {

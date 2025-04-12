@@ -12,8 +12,8 @@
 import fs from 'fs'
 import path from 'path'
 import { RenderObject } from '../render.js'
-import { Location } from '../loader.js'
-import { iconPath, resourceDir } from '../../paths.js'
+import { Location } from "../location.js"
+import { getProject } from '../../project.js'
 
 export abstract class Registry {
 
@@ -41,13 +41,13 @@ export abstract class Registry {
       this.saveInFile(renderPath, renderToSave[renderPath].toJson())
     })
 
-    const iconFile = iconPath(this.location)
+    const iconFile = getProject().iconPath(this.location)
     try {
       fs.mkdirSync(path.dirname(iconFile), { recursive: true })
       fs.writeFileSync(iconFile, this.defaultRender().toIcon(this.secondRender()))
     } catch(e) {
       console.warn('Can not generate icon of object:', this.location.toString())
-      fs.copyFileSync(path.join(resourceDir, 'assets', 'undefined.png'), iconFile)
+      fs.copyFileSync(path.join(getProject().resourceDir, 'assets', 'undefined.png'), iconFile)
     }
   }
 

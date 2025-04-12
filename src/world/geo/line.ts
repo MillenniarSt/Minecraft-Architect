@@ -1,7 +1,7 @@
-import { Material } from "../../materials/material.js"
 import { Schematic } from "../../minecraft/schematic.js"
-import { Seed } from "../../util/random.js"
+import { Seed } from "../../exporter/random.js"
 import { Vec3 } from "../vector.js"
+import { BlockType } from "../../minecraft/register/block.js"
 
 export class Line3 {
 
@@ -28,8 +28,8 @@ export class Line3 {
         return false
     }
 
-    buildMaterial(material: Material, seed: Seed): Schematic {
-        return material.applyLine(this, seed)
+    buildMaterial(material: BlockType, seed: Seed): Schematic {
+        return new Schematic()
     }
 
     static fromJson(json: number[][][]): Line3 {

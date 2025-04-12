@@ -5,16 +5,22 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "start": "npx tsc & node dist/index.js",
-    "restart": "node dist/index.js",
-    "compile": "npx tsc",
-    "install": "npx tsc & gulp install",
-    "ci": "npx tsc & gulp install-src",
-    "i": "gulp install-src",
-    "ir": "gulp install-resources",
-    "im": "gulp install-modules",
-    "uninstall": "gulp uninstall",
-    "compress": "gulp compress"
+    "build": "npx tsc && pkg . --targets node18-win-x64 --output build/architect.exe",
+    "install": "npm run build && gulp install-project",
+
+    "$install": "npx tsc & gulp install",
+    "$ci": "npx tsc & gulp install-src",
+    "$i": "gulp install-src",
+    "$ir": "gulp install-resources",
+    "$im": "gulp install-modules",
+    "$uninstall": "gulp uninstall",
+    "$compress": "gulp compress"
+  },
+  "bin": "dist/index.js",
+  "pkg": {
+    "assets": ["resources/**/*"],
+    "targets": ["node18-win-x64"],
+    "outputPath": "build"
   },
   "author": "Millenniar",
   "license": "ISC",
@@ -25,6 +31,7 @@
     "@types/uuid": "^10.0.0",
     "@types/ws": "^8.5.14",
     "gulp": "^5.0.0",
+    "pkg": "^5.8.1",
     "typescript": "^5.7.3"
   },
   "dependencies": {

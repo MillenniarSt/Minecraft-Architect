@@ -9,12 +9,12 @@
 //      ##    \__|__/
 //
 
-import { OnMessage } from './socket.js'
+import { OnMessage } from './connection/socket.js'
 import { loader } from './minecraft/loader.js'
 import { registerRenderMessages } from './minecraft/messages.js'
-import { project, Project, setProject } from './project.js'
+import { getProject, Project, registerProjectMessages, setProject } from './project.js'
 import { registerMaterialMessages } from './config/material.js'
-import { Exporter } from './exporter.js'
+import { Exporter } from './exporter/exporter.js'
 import fs from 'fs'
 
 /**
@@ -22,6 +22,9 @@ import fs from 'fs'
  * so you make sure they are registered
  */
 import './materials/simple/base.js'
+import { registerRandomMessages } from './exporter/random.js'
+import { registerbuilderMessages } from './exporter/builder.js'
+import path from 'path'
 
 const log = console.log
 console.log = (...args) => {
@@ -43,46 +46,57 @@ console.error = (...args) => {
     error('\x1b[31m[   Minecraft    ] | ERROR |', ...args, '\x1b[0m')
 }
 
-const debug = console.debug
-console.debug = (...args) => {
-    debug('[   Minecraft    ] | DEBUG |', ...args)
+async function shutdown() {
+    console.warn('Closing Minecraft Architect...')
+    const project = getProject()
+    if(project) {
+        await project.server.close()
+        process.exit()
+    }
 }
 
-console.log('Minecraft Starting, waiting for server data...')
-
-process.on('message', async (message) => {
-    const data = JSON.parse(message as string)
-
-    const socketMessages: OnMessage = new Map([
-        ['load/configs', async (data, ws) => {
-            loader.load()
-            await project.loadConfigs()
-            ws.respond()
-        }],
-        ['load/project', async (data, ws) => {
-            ws.respond()
-        }],
-        ['open-channel', (data, ws) => {
-            if(data.id.startsWith('export')) {
-                const exporter = Exporter.fromJson(data.data)
-                const schematic = exporter.build()
-                schematic.print()
-                //fs.writeFileSync('C:\\Users\\Angelo\\Desktop\\Minecraft\\test.nbt', schematic.toNbt())
-                fs.writeFileSync('C:\\Users\\Angelo\\Desktop\\Minecraft\\test.schem', schematic.toSchem())
-            }
-            ws.respond() 
-        }]
-    ])
-
-    loader.load()
-
-    setProject(new Project(data.identifier, data.port))
-
-    registerRenderMessages(socketMessages)
-    registerMaterialMessages(socketMessages)
-
-    project.server.open(socketMessages)
-
-    console.log('Architect started')
-    process.send!('done')
+process.on('SIGINT', shutdown)
+process.on('SIGTERM', shutdown)
+process.on('uncaughtException', (err) => {
+    console.error(err)
+    shutdown()
 })
+
+const identifier: string = process.argv[2]!
+const port: number = process.argv[3] ? Number(process.argv[3]) : 8225
+const isClientSide: boolean = process.argv[4] === 'true'
+
+console.log(`Starting Minecraft Architect for project ${identifier} on port ${port} [${isClientSide ? 'client' : 'server'}]`)
+
+setProject(new Project(identifier, port, isClientSide))
+
+if(!fs.existsSync(getProject().buildDir)) {
+    fs.mkdirSync(getProject().buildDir)
+    fs.mkdirSync(path.join(getProject().buildDir, 'schematics'))
+}
+
+// Test Export
+const socketMessages: OnMessage = new Map([
+    ['open-channel', (data, side, id) => {
+        if (data.id.startsWith('export')) {
+            const exporter = Exporter.fromJson(data.data)
+            const schematic = exporter.build()
+            schematic.print()
+            fs.writeFileSync(path.join(getProject().buildDir, 'schematics', 'test.schem'), schematic.toSchem())
+            console.info(`Created Schematic on ${path.join(getProject().buildDir, 'schematics', 'test.schem')}`)
+        }
+        side.respond(id)
+    }]
+])
+
+loader.load()
+
+registerProjectMessages(socketMessages)
+registerRandomMessages(socketMessages)
+registerbuilderMessages(socketMessages)
+registerRenderMessages(socketMessages)
+registerMaterialMessages(socketMessages)
+
+getProject().server.open(socketMessages)
+
+console.log(`Architect started: [${isClientSide ? 'client' : 'server'}]`)

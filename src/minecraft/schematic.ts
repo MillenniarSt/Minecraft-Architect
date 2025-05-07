@@ -1,9 +1,9 @@
 import { encode, Int, Short } from "nbt-ts";
 import { Vec3 } from "../world/vector.js";
 import { Block } from "./elements/block.js";
-import { loader } from "./loader.js";
 import { BlockState } from "./register/block.js";
 import * as zlib from 'zlib';
+import { getProject } from "../project.js";
 
 export class Schematic {
 
@@ -102,13 +102,13 @@ export class Schematic {
                     Name: state.block.toString()
                 }
             }),
-            DataVersion: new Int(loader.dataVersion)
+            DataVersion: new Int(getProject().loader.dataVersion)
         }))
     }
 
     toSchem(): Buffer {
         const [offset, size] = this.getSize()
-        const palette: BlockState[] = [loader.blocks.get('minecraft:air')!.blockstates[0]]
+        const palette: BlockState[] = [getProject().loader.getBlock('minecraft:air')!.blockstates[0]]
         const blocks: number[] = []
 
         for (let y = offset.y; y < offset.y + size.y; y++) {
@@ -143,7 +143,7 @@ export class Schematic {
                 WEOffsetY: new Int(offset.y),
                 WEOffsetZ: new Int(offset.z)
             },
-            DataVersion: new Int(loader.dataVersion),
+            DataVersion: new Int(getProject().loader.dataVersion),
             Offset: new Int32Array([0, 0, 0])
         }))
     }

@@ -1,3 +1,5 @@
+import path from "path"
+
 export class Location {
 
     static readonly UNDEFINED = new Location('beaver', 'undefined')
@@ -28,6 +30,10 @@ export class Location {
     }
   
     toDir(): string {
-      return `${this.mod}/${this.id}`
+      return path.join(this.mod, this.id)
+    }
+
+    toFile(extension: string): string {
+      return `${this.toDir()}.${extension}`
     }
   }

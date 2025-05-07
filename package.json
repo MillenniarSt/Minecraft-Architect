@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "build": "npx tsc && pkg . --targets node18-win-x64 --output build/architect.exe",
-    "install": "npm run build && gulp install-project",
+    "install": "npm run build && gulp install-project && gulp install-client",
 
     "$install": "npx tsc & gulp install",
     "$ci": "npx tsc & gulp install-src",

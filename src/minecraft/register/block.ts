@@ -11,7 +11,6 @@
 
 import { Registry } from './registry.js'
 import { Item } from './item.js'
-import { loader } from '../loader.js'
 import { Cube, RenderObject } from '../render.js'
 import path from 'path'
 import { Quaternion } from '../../world/quaternion.js'
@@ -67,9 +66,9 @@ export class BlockType extends Registry {
     } else {
       blockstates = Object.keys(json.variants).map((condition) => BlockState.resource(json.variants[condition], location, condition))
     }
-    const itemJson = loader.resourceJson('models/item', location)
+    const itemJson = getProject().loader.resourceJson('models/item', location)
     if (itemJson) {
-      item = new Item(location, name, itemJson)
+      item = Item.resource(location, name, itemJson)
     }
 
     const block = new BlockType(location, name, item, multipart, blockstates)
@@ -119,17 +118,29 @@ export class BlockType extends Registry {
   }
 
   get path(): string {
-    return loader.dataFile("block", this.location, "json")
+    return getProject().loader.dataFile("block", this.location, "json")
+  }
+
+  save(): void {
+    super.save()
+
+    if(this.item) {
+      this.item.save()
+    }
   }
 
   renderToSave(): Record<string, RenderObject> {
-    let renders: [PropertyKey, RenderObject][] = []
+    let renders: [string, RenderObject][] = []
 
     this.blockstates.forEach((blockstate, i) => {
        blockstate.models.forEach((model, j) => {
         renders.push([path.join(getProject().renderDir, 'blocks', `${this.location.toDir()}-${i}-${j}.json`), model.render])
        })
     })
+
+    if(this.item) {
+      renders.push(...Object.entries(this.item.renderToSave()))
+    }
 
     return Object.fromEntries(renders)
   }
@@ -143,8 +154,8 @@ export class BlockState {
     return new BlockState(
       block,
       Array.isArray(models)
-        ? models.map((model: any) => BlockModel.resource(loader.resourceJson('models', Location.fromJson(model.model)), {}, Quaternion.fromAxisAngle(new Vec3(model.x, model.y, model.z), 0)))
-        : [BlockModel.resource(loader.resourceJson('models', Location.fromJson(models['model'])), {}, Quaternion.fromAxisAngle(new Vec3(models.x, models.y, models.z), 0))],
+        ? models.map((model: any) => BlockModel.resource(getProject().loader.resourceJson('models', Location.fromJson(model.model)), {}, Quaternion.fromAxisAngle(new Vec3(model.x, model.y, model.z), 0)))
+        : [BlockModel.resource(getProject().loader.resourceJson('models', Location.fromJson(models['model'])), {}, Quaternion.fromAxisAngle(new Vec3(models.x, models.y, models.z), 0))],
       Condition.resource(condition)
     )
   }
@@ -225,7 +236,7 @@ export class BlockModel {
     }
 
     if (json.parent) {
-      const parentModel = BlockModel.resource(loader.resourceJson('models', Location.fromJson(json.parent)), textures)
+      const parentModel = BlockModel.resource(getProject().loader.resourceJson('models', Location.fromJson(json.parent)), textures)
       cubes.push(...parentModel.render.cubes)
     }
 
@@ -237,7 +248,7 @@ export class BlockModel {
   }
 
   static fromJson(json: any): BlockModel {
-    return new BlockModel(json.cubes.map((cube: any) => Cube.fromJson(cube)))
+    return new BlockModel(RenderObject.fromFile(json.render))
   }
 
   toJson(location: Location, blockstate: number, index: number): any {

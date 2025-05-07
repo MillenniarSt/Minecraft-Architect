@@ -1,4 +1,4 @@
-import { loader } from "../loader.js";
+import { getProject } from "../../project.js";
 import { BlockState, BlockType } from "../register/block.js";
 
 export class Block {
@@ -9,6 +9,6 @@ export class Block {
     ) { }
 
     getType(): BlockType {
-        return loader.blocks.get(this.state.block.toString())!
+        return getProject().loader.getBlock(this.state.block.toString())!
     }
 }

@@ -21,6 +21,10 @@ export abstract class Registry {
 
   abstract toJson(): any
 
+  get icon(): string {
+    return path.join(getProject().renderDir, 'icons', this.location.toFile('png'))
+  }
+
   abstract get path(): string
 
   abstract defaultRender(): RenderObject

@@ -1,5 +1,5 @@
 import { Schematic } from "../minecraft/schematic.js"
-import { randomMaterialType, Seed } from "./random.js"
+import { BLOCK_RANDOM, Seed } from "./random.js"
 import { Line3 } from "../world/geo/line.js"
 import { Object3 } from "../world/geo/object.js"
 import { Surface } from "../world/geo/surface.js"
@@ -45,7 +45,7 @@ export class BuilderResult {
     build(seed: Seed): Schematic {
         let schematic = new Schematic()
         if(this.options.block) {
-            schematic = this.object.buildMaterial(randomMaterialType.get(this.options.block), seed)
+            schematic = this.object.buildMaterial(BLOCK_RANDOM.get(this.options.block), seed)
         }
         this.children.forEach((child) => schematic.join(child.build(seed)))
         return schematic

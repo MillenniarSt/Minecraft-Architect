@@ -1,6 +1,7 @@
-import { IdNotExists } from "../connection/errors"
 import { OnMessage } from "../connection/socket"
-import { loader } from "../minecraft/loader"
+import { BlockType } from "../minecraft/register/block"
+import { Item } from "../minecraft/register/item"
+import { getProject } from "../project"
 
 export class Seed {
 
@@ -19,58 +20,47 @@ export class Seed {
     }
 }
 
-const randomTypes: Record<string, RandomType> = {}
+const RANDOM_TYPES: Record<string, RandomType> = {}
 
-export abstract class RandomType<T = any, R = any> {
+export type RandomCollectionItem<V = any> = { icon?: string, piIcon?: string, label: string, code: V }
+
+export class RandomType<T = any, R = any> {
 
     constructor(
         readonly id: string,
-        readonly defaultValue: T
+        readonly constant: string,
+        readonly randoms: string[],
+        readonly get: (value: T) => R,
+        readonly defaultValue: T,
+        readonly collection: RandomCollectionItem<T>[]
     ) { }
 
-    abstract get(value: T): R
-
-    abstract randoms(): Record<string, any>
-
     static get(id: string): RandomType {
-        return randomTypes[id]
+        return RANDOM_TYPES[id]
     }
 
-    static register(type: RandomType) {
-        randomTypes[type.id] = type
-    }
-}
-
-export class RandomEnumType<R = any> extends RandomType<string, R> {
-
-    constructor(
-        id: string,
-        defaultValue: string,
-        readonly get: (value: string) => R
-    ) {
-        super(id, defaultValue)
-    }
-
-    randoms(): Record<string, any> {
-        return {
-            generic: { name: 'RandomEnum', data: [{ id: this.defaultValue, weight: 1 }] }
-        }
+    static register<T = any, R = any>(type: RandomType<T, R>): RandomType<T, R> {
+        RANDOM_TYPES[type.id] = type
+        return type
     }
 }
 
-export const randomMaterialType = new RandomEnumType('block', 'minecraft:stone_bricks', (value) => {
-    const block = loader.blocks.get(value)
-    if(!block)
-        throw new IdNotExists(value, 'Block')
-    return block
-})
+export let BLOCK_RANDOM: RandomType<string, BlockType>
+export let ITEM_RANDOM: RandomType<string, Item>
 
-RandomType.register(randomMaterialType)
+export function registerRandoms() {
+    BLOCK_RANDOM = RandomType.register(new RandomType('block', 'c_enum', ['enum'], getProject().loader.getBlock, 'minecraft:stone_bricks', getProject().loader.getAllBlocks().map((block) => {
+        return { icon: block.icon, label: block.name, code: block.location.toString() }
+    })))
+    ITEM_RANDOM = RandomType.register(new RandomType('item', 'c_enum', ['enum'], getProject().loader.getItem, 'minecraft:diamond', getProject().loader.getAllItems().map((item) => {
+        return { icon: item.icon, label: item.name, code: item.location.toString() }
+    })))
+}
 
 export function registerRandomMessages(messages: OnMessage) {
     messages.set('random/get-types', async (data, side, id) => {
-        side.respond(id, Object.entries(randomTypes).map(([key, type]) => {
-            return { id: key, constant: type.defaultValue, randoms: type.randoms() }
+        side.respond(id, Object.values(RANDOM_TYPES).map((type) => {
+            return { id: type.id, constant: type.constant, randoms: type.randoms, defaultValue: type.defaultValue, collection: type.collection }
         }))
     })
 }

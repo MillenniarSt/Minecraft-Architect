@@ -10,7 +10,6 @@
 //
 
 import { OnMessage } from './connection/socket.js'
-import { loader } from './minecraft/loader.js'
 import { registerRenderMessages } from './minecraft/messages.js'
 import { getProject, Project, registerProjectMessages, setProject } from './project.js'
 import { registerMaterialMessages } from './config/material.js'
@@ -21,9 +20,8 @@ import fs from 'fs'
  * Import all Builders here
  * so you make sure they are registered
  */
-import './materials/simple/base.js'
-import { registerRandomMessages } from './exporter/random.js'
-import { registerbuilderMessages } from './exporter/builder.js'
+import { registerRandomMessages, registerRandoms } from './exporter/random.js'
+import { registerBuilderMessages } from './exporter/builder.js'
 import path from 'path'
 
 const log = console.log
@@ -51,8 +49,8 @@ async function shutdown() {
     const project = getProject()
     if(project) {
         await project.server.close()
-        process.exit()
     }
+    process.exit()
 }
 
 process.on('SIGINT', shutdown)
@@ -63,12 +61,13 @@ process.on('uncaughtException', (err) => {
 })
 
 const identifier: string = process.argv[2]!
-const port: number = process.argv[3] ? Number(process.argv[3]) : 8225
+const port: number = process.argv[3] ? Number(process.argv[3]) : 2528
 const isClientSide: boolean = process.argv[4] === 'true'
+const dir: string = process.argv[5] ?? path.dirname(process.execPath)
 
 console.log(`Starting Minecraft Architect for project ${identifier} on port ${port} [${isClientSide ? 'client' : 'server'}]`)
 
-setProject(new Project(identifier, port, isClientSide))
+setProject(new Project(dir, '1.20.1', identifier, port, isClientSide))
 
 if(!fs.existsSync(getProject().buildDir)) {
     fs.mkdirSync(getProject().buildDir)
@@ -89,11 +88,12 @@ const socketMessages: OnMessage = new Map([
     }]
 ])
 
-loader.load()
+getProject().loader.load()
+registerRandoms()
 
 registerProjectMessages(socketMessages)
 registerRandomMessages(socketMessages)
-registerbuilderMessages(socketMessages)
+registerBuilderMessages(socketMessages)
 registerRenderMessages(socketMessages)
 registerMaterialMessages(socketMessages)
 

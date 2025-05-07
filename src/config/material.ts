@@ -9,7 +9,6 @@
 //      ##    \__|__/
 //
 
-import { loader } from "../minecraft/loader.js"
 import { getProject } from "../project.js"
 import { ProjectConfigFile } from "./config.js"
 import { OnMessage } from "../connection/socket.js"
@@ -30,7 +29,7 @@ export class Variation {
         for(let i = 0; i < this.modifiers.length; i++) {
             if(this.modifiers[i]) {
                 const rBlock = new Location(block.mod, this.modifiers[i]!.replace('#', block.id))
-                if(loader.blocks.has(rBlock.toString())) {
+                if(getProject().loader.hasBlock(rBlock.toString())) {
                     return rBlock
                 }
             } else {
@@ -144,7 +143,7 @@ export class MaterialConfig extends ProjectConfigFile {
             colors: Object.fromEntries(Object.entries(data.variations.colors).map((entry) => [entry[0], Variation.fromJson(entry[1])]))
         }
         const blockMaterials: [string, Material][] = []
-        loader.blocks.forEach((block, key) => blockMaterials.push([key, new Material(block.location)]))
+        getProject().loader.getAllBlocks().forEach((block) => blockMaterials.push([block.location.toString(), new Material(block.location)]))
         this.materials = Object.fromEntries([
             ...data.materials.map((material: any) => [Location.fromJson(material.location).toString(), Material.fromJson(material)]),
             ...blockMaterials

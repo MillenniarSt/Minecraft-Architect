@@ -11,10 +11,12 @@
 
 import { ArchitectServer, OnMessage } from "./connection/socket.js";
 import { MaterialConfig } from "./config/material.js";
-import { loader } from "./minecraft/loader.js";
+import { GenerationData, MinecraftLoader } from "./minecraft/loader.js";
 import path from 'path'
 import getAppDataPath from "appdata-path";
 import { Location } from "./minecraft/location.js";
+
+export const VERSION = '1.0.0'
 
 let project: Project | undefined
 
@@ -41,21 +43,24 @@ export class Project {
     readonly server: ArchitectServer
 
     constructor(
+        readonly dir: string,
+        readonly mcVersion: string,
         identifier: string,
         port: number,
-        readonly isClientSide: boolean
+        readonly isClientSide: boolean,
+
+        readonly loader: MinecraftLoader = new MinecraftLoader(new GenerationData(VERSION, isClientSide ? 'client' : 'server', mcVersion), 3465),
+
+        readonly buildDir: string = path.join(dir, 'build'),
+        readonly resourceDir: string = path.join(dir, 'resources'),
+    
+        readonly configDir: string = path.join(resourceDir, 'config'),
+        readonly dataDir: string = path.join(resourceDir, 'data'),
+        readonly renderDir: string = path.join(resourceDir, 'render')
     ) {
         this.identifier = identifier
         this.server = new ArchitectServer(port)
     }
-
-    readonly dir: string = path.dirname(process.execPath)
-    readonly buildDir: string = path.join(this.dir, 'build')
-    readonly resourceDir: string = path.join(this.dir, 'resources')
-
-    readonly configDir: string = path.join(this.resourceDir, 'config')
-    readonly dataDir: string = path.join(this.resourceDir, 'data')
-    readonly renderDir: string = path.join(this.resourceDir, 'render')
 
     iconPath(location: Location): string {
         return path.join(this.resourceDir, 'render', 'icons', `${location.toDir()}.png`)
@@ -89,7 +94,7 @@ export class Project {
 
 export function registerProjectMessages(messages: OnMessage) {
     messages.set('load/configs', async (data, side, id) => {
-        loader.load()
+        getProject().loader.load()
         await getProject().loadConfigs()
         side.respond(id)
     })

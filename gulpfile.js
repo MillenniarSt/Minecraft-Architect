@@ -9,8 +9,8 @@ export const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const architect = JSON.parse(fs.readFileSync(path.join(__dirname, 'architect.json'), 'utf-8'))
 
 // Change this path based on your project folder
-const projectDir = 'C:\\Users\\Ange\\Desktop\\Developing\\JavaScript\\Beaver Architect\\server\\build\\project'
-const installDir = path.join(getAppDataPath.default('Beaver Architect'), 'architects', 'minecraft', architect.version)
+const projectDir = 'C:\\Users\\Ange\\Desktop\\Developing\\JavaScript\\Beaver Architect\\server\\run'
+const installDir = path.join(getAppDataPath.default('io.github.MillenniarSt.Beaver-Architect'), 'architects', 'minecraft')
 
 gulp.task('install-project', async () => {
     try {
@@ -18,6 +18,15 @@ gulp.task('install-project', async () => {
         console.log('Architect Installed in the set Project')
     } catch (err) {
         console.error('Error while installing architect in project', err)
+    }
+})
+
+gulp.task('install-client', async () => {
+    try {
+        fs.cpSync(path.join(__dirname, 'build', 'architect.exe'), path.join(installDir, 'architect.exe'), { recursive: true })
+        console.log('Architect Installed in the set Client')
+    } catch (err) {
+        console.error('Error while installing architect in client', err)
     }
 })
 
@@ -76,6 +85,7 @@ gulp.task('uninstall', async () => {
 })
 
 gulp.task('install-project', gulp.series('install-project'))
+gulp.task('install-client', gulp.series('install-client'))
 
 gulp.task('install', gulp.series('install-src', 'install-resources', 'install-dependences'))
 gulp.task('install-src', gulp.series('install-src'))

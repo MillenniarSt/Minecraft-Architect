@@ -11,11 +11,11 @@
 
 import fs from "fs"
 import path from "path"
-import { loader } from "./loader.js"
 import { PNG } from "pngjs"
 import { getAxis, Quaternion, toGrades, toRadiants } from "../world/quaternion.js"
 import { Vec3 } from "../world/vector.js"
 import { Location } from "./location.js"
+import { getProject } from "../project.js"
 
 export class RenderObject {
 
@@ -23,6 +23,14 @@ export class RenderObject {
 
     constructor(cubes: Cube[] = []) {
         this.cubes = cubes
+    }
+
+    static fromFile(file: string): RenderObject {
+        return RenderObject.fromJson(JSON.parse(fs.readFileSync(file, 'utf8')))
+    }
+
+    static fromJson(json: any): RenderObject {
+        return new RenderObject(json.cubes.map((cube: any) => Cube.fromJson(cube)))
     }
 
     toJson(): {} {
@@ -73,7 +81,7 @@ export class RenderObject {
     writeIconTexture(texture: Texture, icon: PNG, pos: [number, number]): boolean {
         let isVoid = true
 
-        const resource = PNG.sync.read(fs.readFileSync(loader.renderFile('textures', texture.location, 'png')))
+        const resource = PNG.sync.read(fs.readFileSync(getProject().loader.renderFile('textures', texture.location, 'png')))
 
         for (let j = 0; j < texture.uv[3] * 16; j++) {       // columns - height
             for (let i = 0; i < texture.uv[2] * 16; i++) {   // rows - width
@@ -235,10 +243,10 @@ export class Texture {
             json.tintindex === 0 ? 0x36b90f : 0xffffff
         )
 
-        const file = loader.renderFile('textures', location, 'png')
+        const file = getProject().loader.renderFile('textures', location, 'png')
 
         if (!fs.existsSync(file)) {
-            texture.save(file, loader.resource('textures', Location.fromJson(textures[json.texture.substring(1)] ?? textures.particle!), 'png')!)
+            texture.save(file, getProject().loader.resource('textures', Location.fromJson(textures[json.texture.substring(1)] ?? textures.particle!), 'png')!)
         }
 
         return texture

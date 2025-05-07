@@ -11,7 +11,6 @@
 
 import { Cube, RenderObject, Texture } from "../render.js"
 import { Registry } from "./registry.js"
-import { loader } from "../loader.js"
 import path from "path"
 import { Vec3 } from "../../world/vector.js"
 import { Quaternion } from "../../world/quaternion.js"
@@ -47,7 +46,7 @@ export class Item extends Registry {
   }
 
   get path(): string {
-    return loader.dataFile("item", this.location, "json")
+    return getProject().loader.dataFile("item", this.location, "json")
   }
 
   renderToSave(): Record<string, RenderObject> {
@@ -64,7 +63,7 @@ export class ItemModel {
   }
 
   static fromJson(json: any): ItemModel {
-    return new ItemModel(new RenderObject(json.cubes.map((cube: any) => Cube.fromJson(cube))), Display.fromJson(json.display))
+    return new ItemModel(RenderObject.fromFile(json.render), Display.fromJson(json.display))
   }
 
   static resource(json: any, pTextures: Record<string, string> = {}): ItemModel {
@@ -84,13 +83,13 @@ export class ItemModel {
     }
 
     if (json.elements) {
-      model.render = json.elements.map((element: any) => Cube.resource(element, textures))
+      model.render = new RenderObject(json.elements.map((element: any) => Cube.resource(element, textures)))
     }
 
     if (json.parent) {
       const parentLoc = Location.fromJson(json.parent)
       if (parentLoc.equals(Location.minecraft('builtin/entity'))) {
-        console.log(`Item model of ${parentLoc} skipped, it is from 'builtin/entity'`)
+        console.warn(`Item model skipped, it is from 'builtin/entity'`)
       } else if (parentLoc.equals(Location.minecraft('item/generated'))) {
         model.render.cubes.push(...Object.keys(textures)
           .filter(layer => layer.indexOf('layer') === 0)
@@ -101,7 +100,7 @@ export class ItemModel {
             )
             const location = Location.fromJson(textures[layer].replace('/', '\\'))
             const texture = new Texture(location)
-            texture.save(loader.renderFile('textures', location, 'png'), loader.resource('textures', Location.fromJson(textures[layer]), 'png')!)
+            texture.save(getProject().loader.renderFile('textures', location, 'png'), getProject().loader.resource('textures', Location.fromJson(textures[layer]), 'png')!)
             cube.faces[0] = texture
             return cube
           })
@@ -117,14 +116,14 @@ export class ItemModel {
             )
             const location = Location.fromJson(textures[layer].replace('/', '\\'))
             const texture = new Texture(location)
-            texture.save(loader.renderFile('textures', location, 'png'), loader.resource('textures', Location.fromJson(textures[layer]), 'png')!)
+            texture.save(getProject().loader.renderFile('textures', location, 'png'), getProject().loader.resource('textures', Location.fromJson(textures[layer]), 'png')!)
             cube.faces[0] = texture
             return cube
           })
         )
         model.display.add(Display.itemHandheld)
       } else {
-        const parent = ItemModel.resource(loader.resourceJson('models', Location.fromJson(json.parent)), textures)
+        const parent = ItemModel.resource(getProject().loader.resourceJson('models', Location.fromJson(json.parent)), textures)
         model.render.cubes.push(...parent.render.cubes)
         model.display.add(parent.display)
       }
@@ -176,7 +175,7 @@ export class Display {
   constructor(public gui?: DisplayConfig, public fixed?: DisplayConfig) { }
 
   static fromJson(json: Record<string, any>): Display {
-    return new Display(DisplayConfig.fromJson(json.gui), DisplayConfig.fromJson(json.fixed))
+    return new Display(json.gui ? DisplayConfig.fromJson(json.gui) : undefined, json.fixed ? DisplayConfig.fromJson(json.fixed) : undefined)
   }
 
   toJson(): any {

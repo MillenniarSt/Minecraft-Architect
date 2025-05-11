@@ -54,9 +54,12 @@ export class Project {
         readonly buildDir: string = path.join(dir, 'build'),
         readonly resourceDir: string = path.join(dir, 'resources'),
     
+        readonly assetsDir: string = path.join(resourceDir, 'assets'),
         readonly configDir: string = path.join(resourceDir, 'config'),
         readonly dataDir: string = path.join(resourceDir, 'data'),
-        readonly renderDir: string = path.join(resourceDir, 'render')
+        readonly renderDir: string = path.join(resourceDir, 'render'),
+
+        readonly internalResourceDir: string = path.join(__dirname, '..', 'resources')
     ) {
         this.identifier = identifier
         this.server = new ArchitectServer(port)

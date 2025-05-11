@@ -23,6 +23,7 @@ import fs from 'fs'
 import { registerRandomMessages, registerRandoms } from './exporter/random.js'
 import { registerBuilderMessages } from './exporter/builder.js'
 import path from 'path'
+import { registerResourcesMessages } from './exporter/resources.js'
 
 const log = console.log
 console.log = (...args) => {
@@ -92,6 +93,7 @@ getProject().loader.load()
 registerRandoms()
 
 registerProjectMessages(socketMessages)
+registerResourcesMessages(socketMessages)
 registerRandomMessages(socketMessages)
 registerBuilderMessages(socketMessages)
 registerRenderMessages(socketMessages)

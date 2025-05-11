@@ -22,8 +22,6 @@ export class Seed {
 
 const RANDOM_TYPES: Record<string, RandomType> = {}
 
-export type RandomCollectionItem<V = any> = { icon?: string, piIcon?: string, label: string, code: V }
-
 export class RandomType<T = any, R = any> {
 
     constructor(
@@ -32,7 +30,7 @@ export class RandomType<T = any, R = any> {
         readonly randoms: string[],
         readonly get: (value: T) => R,
         readonly defaultValue: T,
-        readonly collection: RandomCollectionItem<T>[]
+        readonly allowed: T[]
     ) { }
 
     static get(id: string): RandomType {
@@ -49,18 +47,14 @@ export let BLOCK_RANDOM: RandomType<string, BlockType>
 export let ITEM_RANDOM: RandomType<string, Item>
 
 export function registerRandoms() {
-    BLOCK_RANDOM = RandomType.register(new RandomType('block', 'c_enum', ['enum'], getProject().loader.getBlock, 'minecraft:stone_bricks', getProject().loader.getAllBlocks().map((block) => {
-        return { icon: block.icon, label: block.name, code: block.location.toString() }
-    })))
-    ITEM_RANDOM = RandomType.register(new RandomType('item', 'c_enum', ['enum'], getProject().loader.getItem, 'minecraft:diamond', getProject().loader.getAllItems().map((item) => {
-        return { icon: item.icon, label: item.name, code: item.location.toString() }
-    })))
+    BLOCK_RANDOM = RandomType.register(new RandomType('block', 'c_enum', ['enum'], getProject().loader.getBlock, 'minecraft:stone_bricks', getProject().loader.getAllBlocks().map((block) => block.location.toString())))
+    ITEM_RANDOM = RandomType.register(new RandomType('item', 'c_enum', ['enum'], getProject().loader.getItem, 'minecraft:diamond', getProject().loader.getAllItems().map((item) => item.location.toString())))
 }
 
 export function registerRandomMessages(messages: OnMessage) {
     messages.set('random/get-types', async (data, side, id) => {
         side.respond(id, Object.values(RANDOM_TYPES).map((type) => {
-            return { id: type.id, constant: type.constant, randoms: type.randoms, defaultValue: type.defaultValue, collection: type.collection }
+            return { id: type.id, constant: type.constant, randoms: type.randoms, defaultValue: type.defaultValue, allowed: type.allowed }
         }))
     })
 }

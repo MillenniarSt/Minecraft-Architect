@@ -17,6 +17,7 @@ import { BlockType } from "./register/block.js"
 import { getProject, minecraftDir } from '../project.js'
 import { Location } from './location.js'
 import { IdNotExists } from '../connection/errors.js'
+import { Icons, Lang } from '../exporter/resources.js'
 
 export class MinecraftLoader {
 
@@ -25,17 +26,21 @@ export class MinecraftLoader {
     readonly dataVersion: number
     private archive: AdmZip
 
+    readonly lang: Lang
+    readonly icons: Icons = new Icons()
+
     protected blocks: Map<string, BlockType> = new Map()
     protected items: Map<string, Item> = new Map()
 
     constructor(generation: GenerationData, dataVersion: number) {
         this.dataVersion = dataVersion
         this._generation = generation
+        this.lang = new Lang(generation.language)
         this.archive = new AdmZip(this.resourceJar)
     }
 
     hasBlock(location: Location | string): boolean {
-        return this.blocks.has(location instanceof Location ? location.toString() : location )
+        return this.blocks.has(location instanceof Location ? location.toString() : location)
     }
 
     getBlock(location: Location | string): BlockType {
@@ -51,7 +56,7 @@ export class MinecraftLoader {
     }
 
     hasItem(location: Location | string): boolean {
-        return this.items.has(location instanceof Location ? location.toString() : location )
+        return this.items.has(location instanceof Location ? location.toString() : location)
     }
 
     getItem(location: Location | string): Item {
@@ -71,6 +76,7 @@ export class MinecraftLoader {
 
         const lastGeneration = GenerationData.lastGeneration()
 
+        console.log(lastGeneration, this.generation)
         if (lastGeneration.shouldUpdate(this.generation)) {
             if (fs.existsSync(getProject().resourceDir)) {
                 fs.rmSync(getProject().resourceDir, { recursive: true })
@@ -104,6 +110,9 @@ export class MinecraftLoader {
                 })
             })
 
+            this.lang.load(JSON.parse(fs.readFileSync(path.join(getProject().renderDir, 'lang', `${this.lang.language}.json`), 'utf-8')))
+            this.icons.load(JSON.parse(fs.readFileSync(path.join(getProject().renderDir, 'icons', 'icons.json'), 'utf-8')))
+
             console.log('Loaded all Minecraft Resource')
         }
     }
@@ -134,9 +143,14 @@ export class MinecraftLoader {
                                 const location = new Location(args[1], args[2])
                                 const json = this.resourceJson('models/item', location)
                                 if (json) {
-                                    const item = Item.resource(location, lang[key], json)
+                                    const item = Item.resource(location, json)
                                     item.save()
                                     this.items.set(location.toString(), item)
+
+                                    this.lang.set(item.location.getResourceRef('item'), lang[key])
+                                    this.lang.set(`random_type.item.collection.${item.location.toString()}`, `>${item.location.getResourceRef('item')}`)
+                                    this.icons.set(item.location.getResourceRef('item'), `resources/render/icons/${item.location.mod}/${item.location.id}.png`)
+                                    this.icons.set(`random_type.item.collection.${item.location.toString()}`, `>${item.location.getResourceRef('item')}`)
                                 }
                             }
                         }
@@ -154,13 +168,28 @@ export class MinecraftLoader {
                     const location = new Location(dirs[1], dirs[3].substring(0, dirs[3].lastIndexOf('.')))
                     const json = this.resourceJson('blockstates', location)
                     if (json) {
-                        const block = BlockType.resource(location, savedNames.get(location.toString()) ?? 'Block', json)
+                        const block = BlockType.resource(location, json)
                         block.save()
                         this.blocks.set(location.toString(), block)
+
+                        this.lang.set(block.location.getResourceRef('block'), savedNames.get(location.toString()) ?? 'Unnamed Block')
+                        this.lang.set(`random_type.block.collection.${block.location.toString()}`, `>${block.location.getResourceRef('block')}`)
+                        this.icons.set(block.location.getResourceRef('block'), `resources/render/icons/${block.location.mod}/${block.location.id}.png`)
+                        this.icons.set(`random_type.block.collection.${block.location.toString()}`, `>${block.location.getResourceRef('block')}`)
+                        if (block.item) {
+                            this.lang.set(block.item.location.getResourceRef('item'), `>${block.location.getResourceRef('block')}`)
+                            this.lang.set(`random_type.item.collection.${block.item.location.toString()}`, `>${block.item.location.getResourceRef('item')}`)
+                            this.icons.set(block.item.location.getResourceRef('item'), `>${block.location.getResourceRef('block')}`)
+                            this.icons.set(`random_type.item.collection.${block.item.location.toString()}`, `>${block.item.location.getResourceRef('item')}`)
+                        }
                     }
                 }
             }
         })
+
+        fs.mkdirSync(path.join(getProject().renderDir, 'lang'))
+        fs.writeFileSync(path.join(getProject().renderDir, 'lang', `${this.lang.language}.json`), JSON.stringify(this.lang.toJson()))
+        fs.writeFileSync(path.join(getProject().renderDir, 'icons', 'icons.json'), JSON.stringify(this.icons.toJson()))
 
         console.log('Generated All Resources')
     }
@@ -236,7 +265,7 @@ export class GenerationData {
     }
 
     shouldUpdate(generation: GenerationData) {
-        return this.version !== generation.version || this.isClient !== generation.isClient || this.isServer !== generation.isServer || this.mcVersion !== generation.mcVersion || this.language !== generation.language
+        return this.version !== generation.version || (this.isClient !== generation.isClient && this.isServer !== generation.isServer) || this.mcVersion !== generation.mcVersion || this.language !== generation.language
     }
 
     toJson() {

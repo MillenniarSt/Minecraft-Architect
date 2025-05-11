@@ -26,8 +26,8 @@ export class BlockType extends Registry {
 
   properties: Record<string, string[]>
 
-  constructor(location: Location, name: string, item: Item | undefined, multipart: boolean, blockstates: BlockState[], properties: Record<string, string[]> = {}) {
-    super(location, name)
+  constructor(location: Location, item: Item | undefined, multipart: boolean, blockstates: BlockState[], properties: Record<string, string[]> = {}) {
+    super(location)
     this.item = item
     this.multipart = multipart
     this.blockstates = blockstates
@@ -37,8 +37,7 @@ export class BlockType extends Registry {
   static fromJson(location: Location, json: any): BlockType {
     const itemLoc = json.item ? Location.fromJson(json.item) : undefined
     return new BlockType(
-      location, 
-      json.name, 
+      location,
       json.multipart, 
       json.states[0]?.addictionable === true, 
       json.states.map((blocstate: any) => BlockState.fromJson(blocstate, location)),
@@ -48,7 +47,6 @@ export class BlockType extends Registry {
 
   toJson(): { [key: string]: any } {
     return {
-      name: this.name,
       item: this.item?.location.toJson(),
       multipart: this.multipart,
       states: this.blockstates.map((blocstate, i) => blocstate.toJson(this.location, i)),
@@ -56,7 +54,7 @@ export class BlockType extends Registry {
     }
   }
 
-  static resource(location: Location, name: string, json: any): BlockType {
+  static resource(location: Location, json: any): BlockType {
     const multipart = json.multipart !== undefined
     let blockstates
     let item
@@ -68,10 +66,10 @@ export class BlockType extends Registry {
     }
     const itemJson = getProject().loader.resourceJson('models/item', location)
     if (itemJson) {
-      item = Item.resource(location, name, itemJson)
+      item = Item.resource(location, itemJson)
     }
 
-    const block = new BlockType(location, name, item, multipart, blockstates)
+    const block = new BlockType(location, item, multipart, blockstates)
     block.buildProperties()
     return block
   }

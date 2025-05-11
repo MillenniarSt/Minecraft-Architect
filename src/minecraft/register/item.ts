@@ -21,22 +21,21 @@ export class Item extends Registry {
 
   model: ItemModel
 
-  constructor(location: Location, name: string, model: ItemModel) {
-    super(location, name)
+  constructor(location: Location, model: ItemModel) {
+    super(location)
     this.model = model
   }
 
-  static resource(location: Location, name: string, json: any): Item {
-    return new Item(location, name, ItemModel.resource(json))
+  static resource(location: Location, json: any): Item {
+    return new Item(location, ItemModel.resource(json))
   }
 
   static fromJson(location: Location, json: any): Item {
-    return new Item(location, json.name, ItemModel.fromJson(json.model))
+    return new Item(location, ItemModel.fromJson(json.model))
   }
 
   toJson(): any {
     return {
-      name: this.name,
       model: this.model.toJson(this.location)
     }
   }

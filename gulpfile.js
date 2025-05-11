@@ -6,8 +6,6 @@ import getAppDataPath from 'appdata-path'
 
 export const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
-const architect = JSON.parse(fs.readFileSync(path.join(__dirname, 'architect.json'), 'utf-8'))
-
 // Change this path based on your project folder
 const projectDir = 'C:\\Users\\Ange\\Desktop\\Developing\\JavaScript\\Beaver Architect\\server\\run'
 const installDir = path.join(getAppDataPath.default('io.github.MillenniarSt.Beaver-Architect'), 'architects', 'minecraft')

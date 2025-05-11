@@ -36,4 +36,8 @@ export class Location {
     toFile(extension: string): string {
       return `${this.toDir()}.${extension}`
     }
+
+    getResourceRef(group: string): string {
+      return `minecraft.${group}.${this.mod}.${this.id}`
+    }
   }

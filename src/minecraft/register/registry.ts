@@ -17,7 +17,7 @@ import { getProject } from '../../project.js'
 
 export abstract class Registry {
 
-  constructor(readonly location: Location, readonly name: string) { }
+  constructor(readonly location: Location) { }
 
   abstract toJson(): any
 

@@ -1,0 +1,6 @@
+{
+    "random_type": {
+        "block": ">minecraft.block.minecraft.stone_bricks",
+        "item": ">minecraft.item.minecraft.iron_ingot"
+    }
+}

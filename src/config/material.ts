@@ -7,11 +7,10 @@
 //      ##       |       ##  |  \= \= \====  |   |  |   |  |  \___/  |
 //      ##\___   |   ___/
 //      ##    \__|__/
-//
 
 import { getProject } from "../project.js"
 import { ProjectConfigFile } from "./config.js"
-import { OnMessage } from "../connection/socket.js"
+import { OnMessage } from "../connection/server.js"
 import { idToLabel } from "../util/form.js"
 import { Location } from "../minecraft/location.js"
 

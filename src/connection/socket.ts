@@ -1,129 +1,103 @@
-//             _____
-//         ___/     \___        |  |
-//      ##/  _.- _.-    \##  -  |  |                       -
-//      ##\#=_  '    _=#/##  |  |  |  /---\  |      |      |   ===\  |  __
-//      ##   \\#####//   ##  |  |  |  |___/  |===\  |===\  |   ___|  |==/
-//      ##       |       ##  |  |  |  |      |   |  |   |  |  /   |  |
-//      ##       |       ##  |  \= \= \====  |   |  |   |  |  \___/  |
-//      ##\___   |   ___/
-//      ##    \__|__/
-//
+import { Socket } from "net";
 
-import { WebSocketServer, WebSocket } from 'ws'
-import { ClientSide, ServerSide, SocketSide } from './side.js'
-import { ServerProblem } from './errors.js'
-import { getProject } from '../project.js'
+export class SocketClient {
 
-export type WebSocketMessage = {
-    path: string,
-    id?: string,
-    data: {}
-}
+    protected messageIndex: number = 0
+    protected waitingRequests: Map<number, (buffer: Buffer) => void> = new Map()
 
-export type WebSocketResponse = {
-    id: string,
-    data?: {},
-    err?: WebSocketError
-}
+    protected constructor(
+        readonly socket: Socket = new Socket(),
+        readonly messages: Record<number, (buffer: Buffer, id: number) => void>
+    ) { }
 
-export type WebSocketError = {
-    severity: 'warn' | 'error' | 'fatal',
-    name: string,
-    message: string,
-    stack?: string,
-    errno?: string,
-    syscall?: string
-}
+    static connect(port: number, identity: number, messages: Record<number, (buffer: Buffer, id: number) => void>, host: string = '127.0.0.1'): Promise<SocketClient> {
+        return new Promise((resolve) => {
+            let client = new SocketClient(new Socket(), messages)
 
-export type MessageFunction<D = any> = (data: D, sender: SocketSide, id?: string) => void
+            let messageLength: number = -1
+            let receivedBytes: number
+            let receivedBuffer: Buffer<ArrayBuffer>
 
-export type OnMessage = Map<string, MessageFunction>
-
-export class ArchitectServer {
-
-    private _wss: WebSocketServer | null = null
-
-    private _side: SocketSide | null = null
-
-    constructor(readonly port: number) { }
-
-    open(onMessage: OnMessage) {
-        this._wss = new WebSocketServer({ port: this.port })
-
-        console.log(`[ Socket ] |  OPEN  | WebSocketServer open on port ${this.port}`)
-
-        this.wss.on('connection', (ws) => {
-            console.log(`[ Socket ] |  JOIN  | Client Connected on port ${this.port}`)
-
-            if (this._side) {
-                console.log(`[ Socket ] | CLOSE  | Disconnected old client: ${this._side.socket.url}`)
-                this._side.socket.close()
-            }
-            this._side = getProject().isClientSide ? new ClientSide(ws) : new ServerSide(ws)
-
-            ws.on('message', (data) => {
+            client.socket.on('data', (data) => {
                 try {
-                    const message = JSON.parse(data.toString())
-
-                    if (message.path) {
-                        try {
-                            const f = onMessage.get(message.path)
-                            if (f) {
-                                f(message.data, this.side, message.id)
-                            } else {
-                                console.error(`[ Socket ] |  GET   | Invalid Message Path : ${message.path}`)
-                            }
-                        } catch (error) {
-                            const socketError = error instanceof ServerProblem ? error.toSocketError() : toSocketError(error)
-                            this.side.respond(message.id ?? null, { path: message.path, data: message.data }, socketError)
-                        }
-                    } else {
-                        if (message.err) {
-                            console.error(`[ Socket ] |  GET   | Response Error : ${message.err.stack}`)
-                        }
-                        this.side.onResponse(message)
+                    if (messageLength === -1) {
+                        messageLength = data.readUInt32BE(0)
+                        receivedBytes = 0
+                        receivedBuffer = Buffer.alloc(messageLength)
                     }
-                } catch (error) {
-                    console.error(`[ Socket ] |  GET   | Invalid Message`)
-                    this.side.send('error', toSocketError(error))
+
+                    data.copy(receivedBuffer, receivedBytes)
+                    receivedBytes += data.length
+
+                    if (receivedBytes >= messageLength) {
+                        const messageId = receivedBuffer.readUInt8(4)
+                        const messageIndex = receivedBuffer.readInt32BE(5)
+                        if (messageId === 0) {
+                            const resolveRequest = client.waitingRequests.get(messageIndex)
+                            if (resolveRequest) {
+                                resolveRequest(receivedBuffer.subarray(9))
+                                client.waitingRequests.delete(messageIndex)
+                            } else {
+                                console.warn(`No waiting request for TPC Client on port ${port} for message index ${messageIndex}`)
+                            }
+                        } else {
+                            const message = messages[messageId]
+                            if (message) {
+                                message(receivedBuffer.subarray(9), messageIndex)
+                            } else {
+                                console.warn(`Invalid message id for TPC Client on port ${port} [${messageId}]`)
+                            }
+                        }
+                        messageLength = -1
+                    }
+                } catch (err) {
+                    console.error(`Error in TPC Client on port ${port}: ${err}`)
                 }
             })
 
-            ws.on('error', (err) => {
-                console.error(err)
-            })
-        })
-    }
+            client.socket.connect(port, host, () => {
+                console.info(`Connected to TPC Server on port ${port}`)
 
-    close(): Promise<void> {
-        return new Promise((resolve) => {
-            if(this._wss) {
-                this._wss.close(() => {
-                    console.warn('[ Socket ] | CLOSE  | Closed Minecraft WebSocket Server')
-                    resolve()
+                client.request(identity, Buffer.from([])).then((buffer) => {
+                    if (buffer.readUInt8(0) === 1) {
+                        console.info(`Identification accepted for TPC client ${port}`)
+                    } else {
+                        console.error(`Refused identification for TPC client ${port}`)
+                    }
+                    resolve(client)
                 })
-            } else {
-                resolve()
-            }
+            })
+            client.socket.on('close', () => console.info(`Closed TPC Connection with port ${port}`))
         })
     }
 
-    get wss(): WebSocketServer {
-        return this._wss!
+    protected writeToServer(messageId: number, messageIndex: number, buffer: Buffer) {
+        const bufferToSend = Buffer.alloc(9 + buffer.length)
+        bufferToSend.writeUInt32BE(bufferToSend.length, 0)
+        bufferToSend.writeUInt8(messageId, 4)
+        bufferToSend.writeInt32BE(messageIndex, 5)
+        buffer.copy(bufferToSend, 9)
+        this.socket.write(bufferToSend)
     }
 
-    get side(): SocketSide {
-        return this._side!
+    respond(messageIndex: number, buffer: Buffer) {
+        this.writeToServer(0, messageIndex, buffer)
     }
-}
 
-export function toSocketError(err: any): WebSocketError {
-    return {
-        severity: 'error',
-        name: err.name,
-        message: err.message,
-        stack: err.stack,
-        errno: err.errno,
-        syscall: err.syscall
+    send(messageId: number, buffer: Buffer) {
+        this.messageIndex++
+        this.writeToServer(messageId, this.messageIndex - 1, buffer)
+    }
+
+    request(messageId: number, buffer: Buffer): Promise<Buffer> {
+        return new Promise((resolve) => {
+            this.messageIndex++
+            this.writeToServer(messageId, this.messageIndex - 1, buffer)
+            this.waitingRequests.set(this.messageIndex - 1, resolve)
+        })
+    }
+
+    close(err?: Error) {
+        this.socket.destroy(err)
     }
 }

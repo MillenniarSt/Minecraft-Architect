@@ -7,13 +7,12 @@
 //      ##       |       ##  |  \= \= \====  |   |  |   |  |  \___/  |
 //      ##\___   |   ___/
 //      ##    \__|__/
-//
 
-import { OnMessage } from './connection/socket.js'
+import { OnMessage } from './connection/server.js'
 import { registerRenderMessages } from './minecraft/messages.js'
 import { getProject, Project, registerProjectMessages, setProject } from './project.js'
 import { registerMaterialMessages } from './config/material.js'
-import { Exporter } from './exporter/exporter.js'
+import { BuilderExporter, registerExporterMessages } from './exporter/exporter.js'
 import fs from 'fs'
 
 /**
@@ -24,6 +23,7 @@ import { registerRandomMessages, registerRandoms } from './exporter/random.js'
 import { registerBuilderMessages } from './exporter/builder.js'
 import path from 'path'
 import { registerResourcesMessages } from './exporter/resources.js'
+import { SimpleSchematic } from './minecraft/schematic/simple.js'
 
 const log = console.log
 console.log = (...args) => {
@@ -79,8 +79,9 @@ if(!fs.existsSync(getProject().buildDir)) {
 const socketMessages: OnMessage = new Map([
     ['open-channel', (data, side, id) => {
         if (data.id.startsWith('export')) {
-            const exporter = Exporter.fromJson(data.data)
-            const schematic = exporter.build()
+            const exporter = BuilderExporter.fromJson(data.data)
+            const schematic = new SimpleSchematic()
+            exporter.build(schematic)
             schematic.print()
             fs.writeFileSync(path.join(getProject().buildDir, 'schematics', 'test.schem'), schematic.toSchem())
             console.info(`Created Schematic on ${path.join(getProject().buildDir, 'schematics', 'test.schem')}`)
@@ -98,6 +99,7 @@ registerRandomMessages(socketMessages)
 registerBuilderMessages(socketMessages)
 registerRenderMessages(socketMessages)
 registerMaterialMessages(socketMessages)
+registerExporterMessages(socketMessages)
 
 getProject().server.open(socketMessages)
 

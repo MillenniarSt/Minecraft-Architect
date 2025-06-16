@@ -1,6 +1,16 @@
+//             _____
+//         ___/     \___        |  |
+//      ##/  _.- _.-    \##  -  |  |                       -
+//      ##\#=_  '    _=#/##  |  |  |  /---\  |      |      |   ===\  |  __
+//      ##   \\#####//   ##  |  |  |  |___/  |===\  |===\  |   ___|  |==/
+//      ##       |       ##  |  |  |  |      |   |  |   |  |  /   |  |
+//      ##       |       ##  |  \= \= \====  |   |  |   |  |  \___/  |
+//      ##\___   |   ___/
+//      ##    \__|__/
+
 import { v4 } from "uuid"
 import { WebSocket } from 'ws'
-import { WebSocketError } from "./socket.js"
+import { WebSocketError } from "./server.js"
 
 export abstract class SocketSide {
 
@@ -31,7 +41,7 @@ export abstract class SocketSide {
         if (id === undefined) {
             console.error(`[ Socket ] |  RES   | Trying to respond without a response id`)
         } else {
-            this.socket.send(JSON.stringify({ id: id, data: data ?? {}, err: err }))
+            this.socket.send(JSON.stringify({ id: id, data: data, err: err }))
         }
     }
 

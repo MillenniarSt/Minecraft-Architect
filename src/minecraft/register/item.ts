@@ -7,7 +7,6 @@
 //      ##       |       ##  |  \= \= \====  |   |  |   |  |  \___/  |
 //      ##\___   |   ___/
 //      ##    \__|__/
-//
 
 import { Cube, RenderObject, Texture } from "../render.js"
 import { Registry } from "./registry.js"

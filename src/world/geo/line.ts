@@ -1,9 +1,23 @@
-import { Schematic } from "../../minecraft/schematic.js"
+//             _____
+//         ___/     \___        |  |
+//      ##/  _.- _.-    \##  -  |  |                       -
+//      ##\#=_  '    _=#/##  |  |  |  /---\  |      |      |   ===\  |  __
+//      ##   \\#####//   ##  |  |  |  |___/  |===\  |===\  |   ___|  |==/
+//      ##       |       ##  |  |  |  |      |   |  |   |  |  /   |  |
+//      ##       |       ##  |  \= \= \====  |   |  |   |  |  \___/  |
+//      ##\___   |   ___/
+//      ##    \__|__/
+
+import { Schematic } from "../../minecraft/schematic/schematic.js"
 import { Seed } from "../../exporter/random.js"
 import { Vec3 } from "../vector.js"
 import { BlockType } from "../../minecraft/register/block.js"
+import { SimpleSchematic } from "../../minecraft/schematic/simple.js"
+import { BufferFixedListScheme, BufferIntScheme, BufferListScheme } from "../../util/buffer.js"
 
 export class Line3 {
+
+    static readonly BUFFER_SCHEME = new BufferListScheme(new BufferFixedListScheme(new BufferIntScheme(), 3))
 
     constructor(readonly parts: Line3Part[]) { }
 
@@ -29,7 +43,7 @@ export class Line3 {
     }
 
     buildMaterial(material: BlockType, seed: Seed): Schematic {
-        return new Schematic()
+        return new SimpleSchematic()
     }
 
     static fromJson(json: number[][][]): Line3 {

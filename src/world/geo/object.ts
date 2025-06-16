@@ -1,11 +1,27 @@
-import { Schematic } from "../../minecraft/schematic.js";
-import { Seed } from "../../exporter/random.js";
+//             _____
+//         ___/     \___        |  |
+//      ##/  _.- _.-    \##  -  |  |                       -
+//      ##\#=_  '    _=#/##  |  |  |  /---\  |      |      |   ===\  |  __
+//      ##   \\#####//   ##  |  |  |  |___/  |===\  |===\  |   ___|  |==/
+//      ##       |       ##  |  |  |  |      |   |  |   |  |  /   |  |
+//      ##       |       ##  |  \= \= \====  |   |  |   |  |  \___/  |
+//      ##\___   |   ___/
+//      ##    \__|__/
+
+import { Schematic } from "../../minecraft/schematic/schematic.js";
+import { BLOCK_RANDOM, RandomEnumValue, Seed } from "../../exporter/random.js";
 import { Ray } from "../ray.js";
 import { Vec3 } from "../vector.js";
 import { BlockType } from "../../minecraft/register/block.js";
 import { Block } from "../../minecraft/elements/block.js";
+import { BufferFixedListScheme, BufferIntScheme, BufferListScheme, BufferObjectScheme } from "../../util/buffer.js";
 
 export class Object3 {
+
+    static readonly BUFFER_SCHEME = new BufferObjectScheme([
+        ['vertices', new BufferListScheme(new BufferFixedListScheme(new BufferIntScheme(), 3))],
+        ['triangles', new BufferListScheme(new BufferFixedListScheme(new BufferIntScheme(), 3))]
+    ])
 
     constructor(
         public vertices: Vec3[],
@@ -16,12 +32,16 @@ export class Object3 {
         return new Object3(json.vertices.map(Vec3.fromJson), json.triangles)
     }
 
-    buildMaterial(material: BlockType, seed: Seed): Schematic {
-        const schematic = new Schematic()
+    buildBlock(schematic: Schematic, material: BlockType) {
         this.getBlocks().forEach((vec) => {
             schematic.setBlock(vec, new Block(material.blockstates[0]))
         })
-        return schematic
+    }
+
+    buildBlocks(schematic: Schematic, material: RandomEnumValue[], seed: Seed) {
+        this.getBlocks().forEach((vec) => {
+            schematic.setBlock(vec, new Block(BLOCK_RANDOM.seeded(material, seed).blockstates[0]))
+        })
     }
 
     getBlocks(): Vec3[] {

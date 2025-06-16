@@ -1,9 +1,26 @@
-import { Schematic } from "../../minecraft/schematic.js";
+//             _____
+//         ___/     \___        |  |
+//      ##/  _.- _.-    \##  -  |  |                       -
+//      ##\#=_  '    _=#/##  |  |  |  /---\  |      |      |   ===\  |  __
+//      ##   \\#####//   ##  |  |  |  |___/  |===\  |===\  |   ___|  |==/
+//      ##       |       ##  |  |  |  |      |   |  |   |  |  /   |  |
+//      ##       |       ##  |  \= \= \====  |   |  |   |  |  \___/  |
+//      ##\___   |   ___/
+//      ##    \__|__/
+
+import { Schematic } from "../../minecraft/schematic/schematic.js";
 import { Seed } from "../../exporter/random.js";
 import { Vec3 } from "../vector.js";
 import { BlockType } from "../../minecraft/register/block.js";
+import { SimpleSchematic } from "../../minecraft/schematic/simple.js";
+import { BufferFixedListScheme, BufferIntScheme, BufferListScheme, BufferObjectScheme } from "../../util/buffer.js";
 
 export class Surface {
+
+    static readonly BUFFER_SCHEME = new BufferObjectScheme([
+        ['vertices', new BufferListScheme(new BufferFixedListScheme(new BufferIntScheme(), 3))],
+        ['triangles', new BufferListScheme(new BufferFixedListScheme(new BufferIntScheme(), 3))]
+    ])
 
     constructor(
         public vertices: Vec3[] = [],
@@ -15,7 +32,7 @@ export class Surface {
     }
 
     buildMaterial(material: BlockType, seed: Seed): Schematic {
-        return new Schematic()
+        return new SimpleSchematic()
     }
 
     toJson(): {} {

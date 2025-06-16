@@ -1,4 +1,14 @@
-import { WebSocketError } from "./socket.js"
+//             _____
+//         ___/     \___        |  |
+//      ##/  _.- _.-    \##  -  |  |                       -
+//      ##\#=_  '    _=#/##  |  |  |  /---\  |      |      |   ===\  |  __
+//      ##   \\#####//   ##  |  |  |  |___/  |===\  |===\  |   ___|  |==/
+//      ##       |       ##  |  |  |  |      |   |  |   |  |  /   |  |
+//      ##       |       ##  |  \= \= \====  |   |  |   |  |  \___/  |
+//      ##\___   |   ___/
+//      ##    \__|__/
+
+import { WebSocketError } from "./server.js"
 
 export abstract class ServerProblem extends Error {
 
@@ -49,9 +59,16 @@ export class IdAlreadyExists extends InternalServerError {
     }
 }
 
-export class NameNotRegistered extends InternalServerError {
+export class KeyNotRegistered extends InternalServerError {
 
-    constructor(readonly name: string, ...context: string[]) {
-        super(`Name '${name}' is not registered in ${context.join('/')}`)
+    constructor(readonly key: string, ...context: string[]) {
+        super(`Key '${key}' is not registered in ${context.join('/')}`)
+    }
+}
+
+export class ListEmptyError extends InternalServerError {
+
+    constructor(readonly list: string) {
+        super(`Can not get an item from the list '${list}': it is empty`)
     }
 }

@@ -7,7 +7,6 @@
 //      ##       |       ##  |  \= \= \====  |   |  |   |  |  \___/  |
 //      ##\___   |   ___/
 //      ##    \__|__/
-//
 
 import fs from 'fs'
 import { Item } from "./register/item.js"
@@ -76,7 +75,6 @@ export class MinecraftLoader {
 
         const lastGeneration = GenerationData.lastGeneration()
 
-        console.log(lastGeneration, this.generation)
         if (lastGeneration.shouldUpdate(this.generation)) {
             if (fs.existsSync(getProject().resourceDir)) {
                 fs.rmSync(getProject().resourceDir, { recursive: true })

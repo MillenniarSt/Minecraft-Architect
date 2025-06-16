@@ -7,11 +7,10 @@
 //      ##       |       ##  |  \= \= \====  |   |  |   |  |  \___/  |
 //      ##\___   |   ___/
 //      ##    \__|__/
-//
 
 import fs from 'fs'
 import path from 'path'
-import { OnMessage } from '../connection/socket.js'
+import { OnMessage } from '../connection/server.js'
 import { getProject } from '../project.js'
 
 export function registerRenderMessages(messages: OnMessage) {

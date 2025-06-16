@@ -7,9 +7,8 @@
 //      ##       |       ##  |  \= \= \====  |   |  |   |  |  \___/  |
 //      ##\___   |   ___/
 //      ##    \__|__/
-//
 
-import { ArchitectServer, OnMessage } from "./connection/socket.js";
+import { ArchitectServer, OnMessage } from "./connection/server.js";
 import { MaterialConfig } from "./config/material.js";
 import { GenerationData, MinecraftLoader } from "./minecraft/loader.js";
 import path from 'path'

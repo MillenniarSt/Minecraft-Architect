@@ -47,14 +47,15 @@ export class Object3 {
     getBlocks(): Vec3[] {
         const blocks: Vec3[] = []
 
-        const min = this.vertices.reduce((acc, v) => acc.min(v), this.vertices[0])
-        const max = this.vertices.reduce((acc, v) => acc.max(v), this.vertices[0])
+        const min = this.vertices.reduce((acc, v) => acc.min(v), this.vertices[0]).floor().add(new Vec3(0.5, 0.5, 0.5))
+        const max = this.vertices.reduce((acc, v) => acc.max(v), this.vertices[0]).ceil().add(new Vec3(0.5, 0.5, 0.5))
 
         for (let x = Math.floor(min.x); x < Math.ceil(max.x); x++) {
             for (let y = Math.floor(min.y); y < Math.ceil(max.y); y++) {
                 for (let z = Math.floor(min.z); z < Math.ceil(max.z); z++) {
-                    if (this.contains(new Vec3(x + 0.5, y + 0.5, z + 0.5))) {
-                        blocks.push(new Vec3(x, y, z))
+                    let vec = new Vec3(x, y, z)
+                    if (this.contains(vec)) {
+                        blocks.push(vec)
                     }
                 }
             }

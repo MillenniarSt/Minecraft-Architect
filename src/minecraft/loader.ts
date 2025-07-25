@@ -12,7 +12,7 @@ import fs from 'fs'
 import { Item } from "./register/item.js"
 import AdmZip from "adm-zip"
 import path from "path"
-import { BlockType } from "./register/block.js"
+import { BlockState, BlockType } from "./register/block.js"
 import { getProject, minecraftDir } from '../project.js'
 import { Location } from './location.js'
 import { IdNotExists } from '../connection/errors.js'
@@ -221,6 +221,10 @@ export class MinecraftLoader {
 
     get generation(): GenerationData {
         return this._generation
+    }
+
+    get airBlockState(): BlockState {
+        return this.getBlock(Location.minecraft('air')).blockstates[0]
     }
 }
 

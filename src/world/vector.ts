@@ -147,6 +147,14 @@ export class Vec3 {
         return new Vec3(this.x / length, this.y / length, this.z / length)
     }
 
+    floor(): Vec3 {
+        return new Vec3(Math.floor(this.x), Math.floor(this.y), Math.floor(this.z))
+    }
+
+    ceil(): Vec3 {
+        return new Vec3(Math.ceil(this.x), Math.ceil(this.y), Math.ceil(this.z))
+    }
+
     min(vec: Vec3): Vec3 {
         return new Vec3(Math.min(this.x, vec.x), Math.min(this.y, vec.y), Math.min(this.z, vec.z))
     }

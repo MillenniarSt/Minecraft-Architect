@@ -18,6 +18,8 @@ import { SimpleSchematic } from "../minecraft/schematic/simple.js"
 import { BufferKeyScheme, BufferListScheme, BufferObjectScheme, BufferStringScheme } from "../util/buffer.js"
 import { PaletteSchematic } from "../minecraft/schematic/palette.js"
 import { SocketClient } from "../connection/socket.js"
+import { SizedPaletteSchematic } from "../minecraft/schematic/sized-palette.js"
+import { Vec3 } from "../world/vector.js"
 
 export class BuilderExporter {
 
@@ -111,9 +113,9 @@ export function registerExporterMessages(messages: OnMessage) {
                 const exporter = BuilderExporter.fromBuffer(seed, data, 0)
                 const schematic = new PaletteSchematic()
                 exporter.build(schematic)
-                console.log(`Terrain Chunk result built: took ${(new Date().getTime() - startTime)} ms`)
+                schematic.print()
                 client.respond(id, PaletteSchematic.BUFFER_SCHEME.writeAll(schematic.toBufferFormat()))
-                console.log(`Terrain Chunk sent: took ${(new Date().getTime() - startTime)} ms`)
+                console.log(`Terrain Chunk built: took ${(new Date().getTime() - startTime)} ms`)
             }
         })
         side.respond(id, undefined)

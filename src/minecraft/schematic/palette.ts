@@ -8,17 +8,16 @@
 //      ##\___   |   ___/
 //      ##    \__|__/
 
-import { encode, Int, Short } from "nbt-ts";
+import { encode, Int } from "nbt-ts";
 import { Vec3 } from "../../world/vector.js";
 import { Block } from "../elements/block.js";
-import { BlockState } from "../register/block.js";
 import * as zlib from 'zlib';
 import { getProject } from "../../project.js";
-import { BufferFixedListScheme, BufferIntScheme, BufferListScheme, BufferObjectScheme, BufferShortScheme, BufferStringScheme } from "../../util/buffer.js";
+import { BufferListScheme, BufferObjectScheme, BufferScheme, BufferStringScheme } from "../../util/buffer.js";
 import { Schematic } from "./schematic.js";
 import { mapToEntries } from "../../util/util.js";
 
-//  x: 2^11, y: 2^10, x: 2^11
+//  x: 2^11, y: 2^10, z: 2^11
 const xzMask = (1 << 11) - 1
 const yMask = (1 << 10) - 1
 
@@ -30,11 +29,40 @@ function vecToNumber(vec: Vec3): number {
     return (vec.x << 21) | (vec.y << 11) | vec.z
 }
 
+class BufferPaletteSchematicBlocksSchematic extends BufferScheme<[number, number][]> {
+
+    sizeOf(value: [number, number][]): number {
+        return 4 + (value.length * 6)
+    }
+
+    read(buffer: Buffer<ArrayBufferLike>, offset: number): { size: number; value: [number, number][]; } {
+        let length = buffer.readUInt32BE(offset)
+        let list: [number, number][] = new Array(length)
+        let position = offset + 4
+        for (let i = 0; i < length; i++) {
+            list[i] = [buffer.readInt32BE(position), buffer.readInt16BE(position + 4)]
+            position += 6
+        }
+        return { size: position - offset, value: list }
+    }
+
+    write(buffer: Buffer<ArrayBufferLike>, offset: number, value: [number, number][]): number {
+        buffer.writeUInt32BE(value.length, offset)
+        let position = offset + 4
+        for (let i = 0; i < value.length; i++) {
+            buffer.writeInt32BE(value[i][0], position)
+            buffer.writeInt16BE(value[i][1], position + 4)
+            position += 6
+        }
+        return position - offset
+    }
+}
+
 export class PaletteSchematic extends Schematic {
 
     static readonly BUFFER_SCHEME = new BufferObjectScheme([
         ['palette', new BufferListScheme(new BufferStringScheme())],
-        ['blocks', new BufferListScheme(new BufferFixedListScheme(new BufferShortScheme(), 4))]
+        ['blocks', new BufferPaletteSchematicBlocksSchematic()]
     ])
 
     protected palette: Block[] = []
@@ -91,7 +119,7 @@ export class PaletteSchematic extends Schematic {
     toBufferFormat() {
         return {
             palette: this.palette.map((block) => block.toString()),
-            blocks: mapToEntries(this.blocks).map(([nPos, blockId]) => [(nPos >> 21) & xzMask, (nPos >> 11) & yMask, nPos & xzMask, blockId])
+            blocks: mapToEntries(this.blocks)
         }
     }
 
